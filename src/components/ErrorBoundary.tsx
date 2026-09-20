@@ -1,11 +1,12 @@
 import React from "react";
 import type { ErrorInfo, ReactNode } from "react";
-import { Link } from "react-router-dom";
 
 /** Props for ErrorBoundary. */
 interface ErrorBoundaryProps {
 	/** The subtree to guard. */
 	children: ReactNode;
+	/** Shown in place of `children` once a descendant has thrown. Nothing is rendered when it is left out, since wording and routes are the app's. */
+	fallback?: ReactNode;
 }
 
 /** State for ErrorBoundary. */
@@ -17,10 +18,10 @@ interface ErrorBoundaryState {
 }
 
 /**
- * Catches the case where a reader lands on a doll page with an id that does not exist.
+ * Catches a throw from anywhere in a subtree, most often a reader landing on a detail page whose id does not exist.
  *
- * The selected doll is cached in `sessionStorage`, and that cache appears empty when this triggers,
- * so the fallback links back to the index rather than leaving the reader stuck.
+ * The kit has no opinion on what to show instead. Each archive words its own message and links to its own index, so the replacement arrives as
+ * `fallback` rather than being written here.
  */
 export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
 	state: ErrorBoundaryState = { hasError: false, error: null };
@@ -47,21 +48,11 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
 	}
 
 	/**
-	 * @returns The fallback message when a descendant threw, otherwise the children.
+	 * @returns The fallback when a descendant threw, otherwise the children.
 	 */
 	render() {
 		if (this.state.hasError) {
-			return (
-				<main style={{ padding: "24px 0" }}>
-					<h2 style={{ textAlign: "center" }}>
-						404 T-Doll Not Found! Please go to the{" "}
-						<Link to="/index" style={{ color: "inherit" }}>
-							T-Doll Index
-						</Link>{" "}
-						Page and try again.
-					</h2>
-				</main>
-			);
+			return this.props.fallback ?? null;
 		}
 
 		return this.props.children;
