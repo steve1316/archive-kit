@@ -12,8 +12,12 @@ import "./theme/augmentation.js";
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // Components
 
+export { default as ArchiveNavbar } from "./components/ArchiveNavbar.js";
+export type { NavItem, SearchOption } from "./components/ArchiveNavbar.js";
 export { default as ArtPlaceholder } from "./components/ArtPlaceholder.js";
 export { default as ArtZoomControls } from "./components/ArtZoomControls.js";
+export { default as CardGrid } from "./components/CardGrid.js";
+export type { CardGridSize } from "./components/CardGrid.js";
 export { default as ErrorBoundary } from "./components/ErrorBoundary.js";
 export { default as FilterChip } from "./components/FilterChip.js";
 export { default as FilterPanel } from "./components/FilterPanel.js";
@@ -44,6 +48,14 @@ export { ART_TOP_ANCHOR, CARD_ASPECT, ENEMY_CARD_ASPECT, ENEMY_HERO_CARD_ASPECT,
 
 // Name search. `findNameMatch` is what produces the tuple `HighlightedName` takes, and folds case and punctuation so "hk416" matches "HK-416".
 export { findNameMatch, matchesAnyName, normaliseName } from "./lib/nameSearch.js";
+
+// Data primitives. The URL maps and the asset host arrive as arguments, since a Vite macro cannot live in an installed package.
+export { createAssetUrls } from "./lib/assets.js";
+export type { AssetUrls } from "./lib/assets.js";
+export { createDataStore } from "./lib/dataStore.js";
+export type { DataStore, DataStoreOptions } from "./lib/dataStore.js";
+export { shardFor } from "./lib/shards.js";
+export type { Shard } from "./lib/shards.js";
 
 // Release dates and templated skill text.
 export { formatRelease } from "./lib/formatRelease.js";
