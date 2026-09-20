@@ -58,8 +58,15 @@ Three files are shipped to copy rather than import:
 | Path | What it is |
 |---|---|
 | `archive-kit/tsconfig.base.json` | The app-side TypeScript config, meant for `extends` |
-| `archive-kit/presets/nginx.conf` | Serving the app from the root, for Docker and local previews |
 | `archive-kit/presets/deploy.yml` | The GitHub Pages workflow |
+| `archive-kit/presets/Dockerfile` | A root-path build, for checking the site before a push |
+| `archive-kit/presets/nginx.conf` | What that image serves with |
+| `archive-kit/presets/docker-compose.yml` | Brings the image up on port 8088 |
+| `archive-kit/presets/dockerignore` | Copy to `.dockerignore`; shipped without the dot so it is visible |
+
+The Dockerfile is worth reading before writing your own: `node:22-alpine` ships no git, and this package
+installs from a git URL and builds itself at install time, so the build stage needs `apk add --no-cache git`
+or the install fails with `sh: git: not found`.
 
 ## What is deliberately not in it
 
