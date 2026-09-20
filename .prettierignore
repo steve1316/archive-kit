@@ -4,3 +4,6 @@ pnpm-lock.yaml
 
 # Hand-wrapped prose. Prettier would rewrap it and lose the layout.
 *.md
+
+# Local-only editor settings.
+.vscode

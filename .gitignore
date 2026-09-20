@@ -7,3 +7,9 @@
 # Misc.
 .DS_Store
 *.log
+
+# playwright mcp scratch output
+.playwright-mcp/
+
+# superpowers brainstorming session files
+.superpowers/
