@@ -3,7 +3,7 @@ import { memo } from "react";
 import { Box, alpha } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
 
-import { heroArtSx } from "../lib/artLayout.js";
+import { ART_TOP_ANCHOR, heroArtSx } from "../lib/artLayout.js";
 
 const styles = {
 	// Fixed to the viewport rather than sized to the page, so the art stays behind whatever is on screen as
@@ -33,6 +33,8 @@ const styles = {
 interface PageBackdropProps {
 	/** URL of the full art to blur, or undefined when none is published, which leaves a plain background. */
 	artUrl: string | undefined;
+	/** Where the crop anchors, as a CSS `object-position`. Defaults to the top, which is measured to keep GFL's faces in frame. */
+	anchor?: string;
 }
 
 /**
@@ -44,10 +46,10 @@ interface PageBackdropProps {
  * @param props Component props.
  * @returns The fixed backdrop layer.
  */
-export default memo(function PageBackdrop({ artUrl }: PageBackdropProps) {
+export default memo(function PageBackdrop({ artUrl, anchor = ART_TOP_ANCHOR }: PageBackdropProps) {
 	return (
 		<Box sx={styles.root} aria-hidden>
-			{artUrl ? <Box component="img" src={artUrl} alt="" sx={styles.art} /> : null}
+			{artUrl ? <Box component="img" src={artUrl} alt="" sx={[styles.art, { objectPosition: anchor }]} /> : null}
 			<Box sx={styles.scrim} />
 		</Box>
 	);
