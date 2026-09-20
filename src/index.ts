@@ -4,6 +4,10 @@
 
 // The single entry point consumers import from. The `exports` map exposes only this file, so nothing reaches an app by a deep import.
 
+// Imported for its `declare module` alone, which is what puts the kit's extra palette slots on MUI's `Palette` for a consumer. A side-effect
+// import survives declaration emit and cannot be tidied away by a later refactor, which a lone type re-export can.
+import "./theme/augmentation.js";
+
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // Components
@@ -34,8 +38,6 @@ export type { ActiveFilter, SortOption } from "./components/IndexSummaryBar.js";
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // Theme
 
-// Re-exported so the `declare module` beside it stays in the emitted declaration graph. Without a real re-export the augmentation is
-// elided and a consumer loses `theme.palette.rarity`.
 export type { DomainColours } from "./theme/augmentation.js";
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
