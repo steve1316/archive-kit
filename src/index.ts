@@ -19,6 +19,7 @@ export { default as LazySection } from "./components/LazySection.js";
 export { default as LevelSlider } from "./components/LevelSlider.js";
 export { default as LoadError } from "./components/LoadError.js";
 export { default as PageBackdrop } from "./components/PageBackdrop.js";
+export { default as RankBar } from "./components/RankBar.js";
 export { default as ScrollToTop } from "./components/ScrollToTop.js";
 export { default as ScrollToTopOnNavigate } from "./components/ScrollToTopOnNavigate.js";
 export { default as StarRankPicker } from "./components/StarRankPicker.js";
