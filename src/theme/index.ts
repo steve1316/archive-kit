@@ -13,8 +13,8 @@ const DEFAULT_SHAPE: ThemeOptions["shape"] = { borderRadius: 8 };
 /**
  * Component defaults, so a card looks the same on a detail page as it does on an index without either file saying so.
  *
- * These are the whole reason the factory exists rather than each archive calling `createTheme` itself. They read `palette.raised` and
- * `palette.divider`, which is why `ArchivePaletteOptions` requires the former.
+ * These are the whole reason the factory exists rather than each archive calling `createTheme` itself. They read `palette.raised`,
+ * `palette.divider` and `palette.text.primary`. Only the first has no MUI default, which is why `ArchivePaletteOptions` requires it.
  */
 const ARCHIVE_COMPONENTS: ThemeOptions["components"] = {
 	// Stat figures have to line up down a column, and proportional digits do not.
@@ -66,17 +66,19 @@ const ARCHIVE_COMPONENTS: ThemeOptions["components"] = {
 
 /** The palette an archive supplies. `raised` is required here, unlike on MUI's `Palette`, because the kit's own component defaults paint with it. */
 export interface ArchivePaletteOptions extends PaletteOptions {
+	/** Always `dark`. Light mode is a settled won't-do, and MUI defaults to light, so leaving it open would silently paint dark text on a dark bar. */
+	mode: "dark";
 	/** One step above `background.paper`, for panels that sit on top of a card. */
 	raised: string;
 }
 
-/** Options for createArchiveTheme. */
+/** Options for `createArchiveTheme`. */
 export interface ArchiveThemeOptions {
 	/** The archive's colours, including any domain colour maps such as `rarity`. Dark only - light mode is a settled won't-do. */
 	palette: ArchivePaletteOptions;
 	/** Replaces the kit's type scale outright. Left out, `archiveTypography` is used. */
 	typography?: ThemeOptions["typography"];
-	/** Merged over the kit's component defaults, one whole component entry at a time. Naming a component replaces the kit's entry for it rather than merging into it. */
+	/** Deep-merged over the kit's component defaults, so untouched slots survive. A style override the kit also sets is replaced, not composed. */
 	components?: ThemeOptions["components"];
 	/** Replaces the kit's 8px corner radius. */
 	shape?: ThemeOptions["shape"];
@@ -91,11 +93,9 @@ export interface ArchiveThemeOptions {
  * @param options The archive's palette, and anything it overrides.
  * @returns The configured theme.
  */
-export function createArchiveTheme({ palette, typography = archiveTypography, components, shape = DEFAULT_SHAPE }: ArchiveThemeOptions): Theme {
-	return createTheme({
-		palette,
-		typography,
-		shape,
-		components: { ...ARCHIVE_COMPONENTS, ...components }
-	});
+export function createArchiveTheme({ palette, typography = archiveTypography, components = {}, shape = DEFAULT_SHAPE }: ArchiveThemeOptions): Theme {
+	// Two arguments rather than one merged object, so MUI's own deepmerge runs: an app overriding one `MuiCard` style keeps the kit's
+	// `elevation: 0` and every sibling slot, where a shallow spread would drop them. `components` defaults to `{}` because the merge throws on
+	// an undefined value.
+	return createTheme({ palette, typography, shape, components: ARCHIVE_COMPONENTS }, { components });
 }
