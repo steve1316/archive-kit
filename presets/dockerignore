@@ -1,0 +1,11 @@
+# Copy to the app's repo root as `.dockerignore`. It ships without the leading dot so it is visible in a directory listing of the presets.
+#
+# `COPY . .` in the Dockerfile would otherwise pull in the host's node_modules and the whole git history, which is slow and can leave a
+# platform-specific install inside the image.
+
+node_modules
+build
+.git
+.github
+
+# Add whatever the app generates locally but does not need in the image, such as a staged asset tree or an asset manifest.
