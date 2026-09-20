@@ -1,0 +1,26 @@
+{
+	"//": "Base config for an archive app. Extend it with `\"extends\": \"archive-kit/tsconfig.base.json\"` and add your own `include`. This is the app-side config: it keeps `vite/client`, which the kit's own tsconfig deliberately does not have.",
+	"compilerOptions": {
+		"target": "ES2022",
+		"lib": ["ES2022", "DOM", "DOM.Iterable"],
+		"module": "ESNext",
+		"moduleResolution": "bundler",
+		"jsx": "react-jsx",
+		"types": ["vite/client"],
+
+		"strict": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"noFallthroughCasesInSwitch": true,
+
+		"allowJs": false,
+		"checkJs": false,
+		"resolveJsonModule": true,
+		"verbatimModuleSyntax": true,
+		"isolatedModules": true,
+		"allowImportingTsExtensions": true,
+		"skipLibCheck": true,
+		"noEmit": true
+	}
+}
