@@ -22,7 +22,7 @@ export interface DataStore {
 	 *
 	 * @param name The file's name, as `urls` keys it.
 	 * @returns The parsed JSON.
-	 * @throws When the name is not in `urls`, or the response is not OK.
+	 * @throws When the name is not in `urls`, the request fails, the response is not OK, or the body is not JSON. Every message names the file.
 	 */
 	fetchFile<T>(name: string): Promise<T>;
 	/**
@@ -30,6 +30,12 @@ export interface DataStore {
 	 *
 	 * The in-flight promise is what gets cached, not its result, so two callers racing for the same key share one request. A rejection is
 	 * dropped from the cache, because caching it would make a transient network failure permanent for the life of the page.
+	 *
+	 * Keys here are the caller's own namespace. `loadFile` prefixes its keys with `file:`, so caching a processed value under the same name as
+	 * the file it came from - which is what GFL's `loadShard` does - cannot collide with the raw file.
+	 *
+	 * Dropping the rejection needs an internal `catch`, which marks the promise handled. A caller that ignores the returned promise therefore
+	 * gets no unhandled-rejection warning, so failures have to be handled at the call site to be seen at all.
 	 *
 	 * @param key What to cache under.
 	 * @param make Starts the load. Only called when the key is not already cached.
@@ -41,6 +47,7 @@ export interface DataStore {
 	 *
 	 * @param name The file's name, as `urls` keys it.
 	 * @returns The parsed JSON.
+	 * @throws Everything `fetchFile` throws, on the first call for a name.
 	 */
 	loadFile<T>(name: string): Promise<T>;
 	/** Forget every cached load, so the next call fetches again. */
@@ -58,19 +65,32 @@ export interface DataStore {
  */
 export function createDataStore({ urls }: DataStoreOptions): DataStore {
 	// Values are promises of unknown, since one cache holds loads of many different shapes. `loadOnce` casts on the way out, which is safe as
-	// long as a key is always used for the same load - the same contract a caller already has with any keyed cache.
+	// long as a key is always used for the same load. `loadFile` namespaces its own keys so it cannot break that on the caller's behalf.
 	const cache = new Map<string, Promise<unknown>>();
 
 	const fetchFile = async <T>(name: string): Promise<T> => {
-		const url = urls[name];
-		if (url === undefined) {
+		// `hasOwn` rather than an undefined check, or an inherited name such as `toString` resolves to a function off `Object.prototype` and
+		// gets handed to `fetch`. An empty entry is rejected too: in a browser `fetch("")` re-fetches the current page and answers 200.
+		const url = Object.hasOwn(urls, name) ? urls[name] : undefined;
+		if (url === undefined || url === "") {
 			throw new Error(`${name} is not a known data file`);
 		}
-		const response = await fetch(url);
+		let response: Response;
+		try {
+			response = await fetch(url);
+		} catch (cause) {
+			throw new Error(`${name} could not be fetched from ${url}`, { cause });
+		}
 		if (!response.ok) {
 			throw new Error(`${name} failed to load with HTTP ${response.status}`);
 		}
-		return (await response.json()) as T;
+		try {
+			return (await response.json()) as T;
+		} catch (cause) {
+			// A static host with an SPA fallback answers an unknown path with index.html and HTTP 200, so this is the shape a missing data file
+			// actually takes in production. Without the file name the reader sees only a bare SyntaxError about a `<`.
+			throw new Error(`${name} loaded from ${url} but did not parse as JSON`, { cause });
+		}
 	};
 
 	const loadOnce = <T>(key: string, make: () => Promise<T>): Promise<T> => {
@@ -91,7 +111,8 @@ export function createDataStore({ urls }: DataStoreOptions): DataStore {
 	return {
 		fetchFile,
 		loadOnce,
-		loadFile: <T>(name: string): Promise<T> => loadOnce(name, () => fetchFile<T>(name)),
+		// Prefixed so a processed value an app caches under a file's own name cannot alias the raw file. See `loadOnce`.
+		loadFile: <T>(name: string): Promise<T> => loadOnce(`file:${name}`, () => fetchFile<T>(name)),
 		clear: () => cache.clear()
 	};
 }
