@@ -45,10 +45,19 @@ export { ART_TOP_ANCHOR, CARD_ASPECT, ENEMY_CARD_ASPECT, ENEMY_HERO_CARD_ASPECT,
 // Name search. `findNameMatch` is what produces the tuple `HighlightedName` takes, and folds case and punctuation so "hk416" matches "HK-416".
 export { findNameMatch, matchesAnyName, normaliseName } from "./lib/nameSearch.js";
 
+// Release dates and templated skill text.
+export { formatRelease } from "./lib/formatRelease.js";
+export type { Release, ReleasePrecision } from "./lib/formatRelease.js";
+export { describeTemplate } from "./lib/skillText.js";
+export type { TemplateOptions } from "./lib/skillText.js";
+
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // Theme
 
+export { createArchiveTheme } from "./theme/index.js";
+export type { ArchivePaletteOptions, ArchiveThemeOptions } from "./theme/index.js";
+export { FONT_STACK, archiveTypography } from "./theme/typography.js";
 export type { DomainColours } from "./theme/augmentation.js";
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
