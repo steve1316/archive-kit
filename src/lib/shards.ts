@@ -19,6 +19,10 @@ export interface Shard<K> {
 /**
  * The shard holding one key.
  *
+ * A table that must never miss should end in a catch-all whose `holds` returns true, the way GFL's ends at `Number.POSITIVE_INFINITY`. Without
+ * one a key outside every shard returns null, which `strict` then forces the caller to handle - better than GFL, which clamped a bad id into
+ * the last shard and loaded the wrong data.
+ *
  * @param shards The shard table, in the order it should be tested.
  * @param key The key to place.
  * @returns The first shard that claims the key, or null when none does.
