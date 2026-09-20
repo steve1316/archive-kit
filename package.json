@@ -2,7 +2,7 @@
 	"name": "archive-kit",
 	"version": "0.1.0",
 	"description": "The shared front-end framework behind a family of static game-archive sites.",
-	"license": "GPL-3.0-only",
+	"license": "GPL-3.0-or-later",
 	"repository": {
 		"type": "git",
 		"url": "git+https://github.com/steve1316/archive-kit.git"

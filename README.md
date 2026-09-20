@@ -46,4 +46,4 @@ resolves against the package's own folder once it is installed, so it cannot liv
 
 ## Licence
 
-GPL-3.0, the same as the sites built on it.
+GPL-3.0-or-later, the same as the sites built on it.
