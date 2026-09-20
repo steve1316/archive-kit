@@ -36,6 +36,17 @@ export type { ActiveFilter, SortOption } from "./components/IndexSummaryBar.js";
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////////////////////////////////////
+// Helpers
+
+// Art layout. The aspect constants are GFL's measurements and keep GFL's names for now - K3 settles whether a second game renames them or
+// supplies its own. The `sx` helpers and `ART_TOP_ANCHOR` are shape-independent.
+export { ART_TOP_ANCHOR, CARD_ASPECT, ENEMY_CARD_ASPECT, ENEMY_HERO_CARD_ASPECT, FAB_EXPAND_SX, HOC_CARD_ASPECT, PLACEHOLDER_SX, cardArtSx, containArtSx, heroArtSx } from "./lib/artLayout.js";
+
+// Name search. `findNameMatch` is what produces the tuple `HighlightedName` takes, and folds case and punctuation so "hk416" matches "HK-416".
+export { findNameMatch, matchesAnyName, normaliseName } from "./lib/nameSearch.js";
+
+// //////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////
 // Theme
 
 export type { DomainColours } from "./theme/augmentation.js";
