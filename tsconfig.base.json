@@ -1,5 +1,7 @@
 {
-	"//": "Base config for an archive app. Extend it with `\"extends\": \"archive-kit/tsconfig.base.json\"` and add your own `include`. This is the app-side config: it keeps `vite/client`, which the kit's own tsconfig deliberately does not have.",
+	// Base config for an archive app. Extend it and add your own `include`:
+	//     { "extends": "archive-kit/tsconfig.base.json", "include": ["src"] }
+	// This is the app-side config, so unlike the kit's own tsconfig it keeps `vite/client` and the two macros that come with it.
 	"compilerOptions": {
 		"target": "ES2022",
 		"lib": ["ES2022", "DOM", "DOM.Iterable"],

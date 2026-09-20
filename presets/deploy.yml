@@ -1,10 +1,11 @@
-# Copy to .github/workflows/deploy.yml in the app. Two things to check before the first run: the branch below matches the app's default branch,
-# and `path` matches the app's Vite `build.outDir`.
+# Copy to .github/workflows/deploy.yml in the app. Three things to check before the first run: the branch below matches the app's default
+# branch, `path` matches the app's Vite `build.outDir`, and the app's own `build` script runs a type check, since the comment below assumes it.
 
 name: Deploy to GitHub Pages
 
 on:
   push:
+    # Both existing archives are on master. Change this if the app defaults to main.
     branches: [master]
   workflow_dispatch:
 
@@ -32,10 +33,10 @@ jobs:
           node-version: 22
           cache: pnpm
 
-      # archive-kit is a git dependency that builds at install, so the runner needs git. It has it; a node:*-alpine Docker image does not.
+      # archive-kit is a git dependency that builds itself at install, so the runner needs git. GitHub's runner image already has it.
       - run: pnpm install --frozen-lockfile
 
-      # `pnpm build` runs tsc first, so a type error fails the deploy rather than shipping.
+      # Only a type gate if the app's own `build` script runs one, such as `tsc --noEmit && vite build`.
       - run: pnpm build
 
       # Enabling Pages is not the same as switching how it publishes. `enablement` sets the source to Actions so this artifact goes live.
