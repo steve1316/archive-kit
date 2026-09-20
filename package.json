@@ -12,13 +12,22 @@
 	"packageManager": "pnpm@12.3.4",
 	"files": [
 		"dist",
-		"src"
+		"src",
+		"presets",
+		"tsconfig.base.json"
 	],
 	"exports": {
 		".": {
 			"types": "./dist/index.d.ts",
 			"import": "./dist/index.js"
-		}
+		},
+		"./config": {
+			"types": "./dist/config/index.d.ts",
+			"import": "./dist/config/index.js"
+		},
+		"./tsconfig.base.json": "./tsconfig.base.json",
+		"./presets/nginx.conf": "./presets/nginx.conf",
+		"./presets/deploy.yml": "./presets/deploy.yml"
 	},
 	"scripts": {
 		"build": "tsc",
@@ -41,12 +50,14 @@
 		"@emotion/styled": "^11.14.1",
 		"@mui/icons-material": "^9.4.0",
 		"@mui/material": "^9.4.0",
+		"@types/node": "^22.20.4",
 		"@types/react": "^19.3.0",
 		"@types/react-dom": "^19.3.0",
 		"prettier": "^3.9.6",
 		"react": "^19.3.0",
 		"react-dom": "^19.3.0",
 		"react-router-dom": "^7.18.3",
-		"typescript": "^7.0.2"
+		"typescript": "^7.0.2",
+		"vite": "^8.3.0"
 	}
 }
