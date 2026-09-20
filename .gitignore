@@ -1,0 +1,9 @@
+# Dependencies.
+/node_modules
+
+# Build output. The package is built at install time by `prepare`.
+/dist
+
+# Misc.
+.DS_Store
+*.log
