@@ -4,7 +4,7 @@
 
 /** What an archive gets back from `createAssetUrls`. */
 export interface AssetUrls {
-	/** The base the URLs are built against, with any trailing slash removed. */
+	/** The base the URLs are built against, with any trailing slashes removed. */
 	readonly base: string;
 	/**
 	 * Absolute URL for one file on the asset host.
@@ -38,11 +38,16 @@ export interface AssetUrls {
  * @returns The `url` and `dir` builders, bound to that host.
  */
 export function createAssetUrls(baseUrl: string): AssetUrls {
-	const base = baseUrl.replace(/\/$/, "");
+	const base = baseUrl.replace(/\/+$/, "");
 	const url = (path: string): string => `${base}/${path.split("/").map(encodeURIComponent).join("/")}`;
 	return {
 		base,
 		url,
-		dir: (path: string): string => `${url(path)}/`
+		dir: (path: string): string => {
+			// A trailing slash on the way in would otherwise double up. GFL guarded this at each call site, so a rig with no subfolder did not
+			// end up at `spine/65//`, which is exactly the case this method exists for.
+			const trimmed = path.replace(/\/+$/, "");
+			return trimmed === "" ? `${base}/` : `${url(trimmed)}/`;
+		}
 	};
 }
