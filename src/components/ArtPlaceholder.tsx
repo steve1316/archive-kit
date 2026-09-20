@@ -23,7 +23,8 @@ interface ArtPlaceholderProps {
  */
 export default memo(function ArtPlaceholder({ name, aspect = CARD_ASPECT, sx }: ArtPlaceholderProps) {
 	return (
-		<Box sx={[PLACEHOLDER_SX, { aspectRatio: aspect }, ...(sx === undefined ? [] : Array.isArray(sx) ? sx : [sx])]} role="img" aria-label={`${name} - art not available yet`}>
+		// The caller's `sx` is spread rather than nested, because MUI drops a nested array instead of flattening it, which would silently ignore an array `sx`.
+		<Box sx={[PLACEHOLDER_SX, { aspectRatio: aspect }, ...(Array.isArray(sx) ? sx : [sx ?? false])]} role="img" aria-label={`${name} - art not available yet`}>
 			<Typography sx={{ fontSize: "0.75rem", color: "text.secondary", px: 1, textAlign: "center" }}>Art not available yet</Typography>
 		</Box>
 	);
