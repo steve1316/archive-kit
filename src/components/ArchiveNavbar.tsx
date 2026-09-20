@@ -96,6 +96,17 @@ const groupByLetter = (option: GroupedOption) => option.firstLetter;
 const optionLabel = (option: GroupedOption) => option.name;
 
 /**
+ * The React key for one dropdown row.
+ *
+ * Without this MUI keys each row by its label, and a name that appears in two of an archive's categories - GFL has 24, such as `Vector` as
+ * both a T-Doll and an enemy - renders two siblings under one key. That warns, and can snap `autoHighlight` onto the wrong row.
+ *
+ * @param option The option.
+ * @returns Its page, which is unique by definition.
+ */
+const optionKey = (option: GroupedOption) => option.path;
+
+/**
  * Narrow the dropdown to options whose name or alias holds the typed text, ignoring case, spaces and punctuation.
  *
  * @param list Every option.
@@ -247,7 +258,8 @@ export default function ArchiveNavbar({ title, navItems, searchOptions, homeLink
 		[searchOptions]
 	);
 
-	// Every handler is stable, so the memoised drawer list and the Autocomplete's callback props do not change identity on every keystroke.
+	// These four are stable, so the memoised drawer list and the Autocomplete's callback props do not change identity on every keystroke.
+	// `handleSubmit` below is deliberately not - it reads the typed text - but it only ever reaches a plain `form`, so nothing memoised sees it.
 	const handleDrawerToggle = useCallback(() => setDrawerOpen((open) => !open), []);
 	const closeDrawer = useCallback(() => setDrawerOpen(false), []);
 	const openSearch = useCallback(() => setSearchOpen(true), []);
@@ -308,6 +320,7 @@ export default function ArchiveNavbar({ title, navItems, searchOptions, homeLink
 				options={options}
 				groupBy={groupByLetter}
 				getOptionLabel={optionLabel}
+				getOptionKey={optionKey}
 				filterOptions={filterByName}
 				size="small"
 				sx={{ width: "100%", minWidth: { xs: 0, sm: 300 } }}
