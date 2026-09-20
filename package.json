@@ -26,8 +26,8 @@
 			"import": "./dist/config/index.js"
 		},
 		"./tsconfig.base.json": "./tsconfig.base.json",
-		"./presets/nginx.conf": "./presets/nginx.conf",
-		"./presets/deploy.yml": "./presets/deploy.yml"
+		"./presets/*": "./presets/*",
+		"./package.json": "./package.json"
 	},
 	"scripts": {
 		"build": "tsc",
