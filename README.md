@@ -24,6 +24,19 @@ pnpm clones the tag and runs `prepare` to build it. The consuming app supplies `
 `@mui/material`, `@mui/icons-material`, `@emotion/react`, `@emotion/styled` and `react-router-dom`, which are
 peer dependencies here so exactly one copy of React and MUI ends up in the bundle.
 
+**pnpm 12 will refuse that install until the package is allowlisted.** A git-hosted dependency that runs
+build scripts needs an entry in the app's `pnpm-workspace.yaml`, and the key is the resolved tarball URL
+including the commit, not the package name:
+
+```yaml
+allowBuilds:
+  archive-kit@https://codeload.github.com/steve1316/archive-kit/tar.gz/<commit-sha>: true
+```
+
+Without it the install stops at `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED`. Run `pnpm install` once and copy the
+key out of the error, which prints the exact line to paste. Because the key carries a commit, it has to be
+updated whenever the pinned tag moves - the same install error is how you find out.
+
 ## What is in it
 
 - **Presentational components** - filter chips, rows and panels, an index summary bar, a card grid, a name
