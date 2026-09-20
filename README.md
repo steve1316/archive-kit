@@ -33,7 +33,7 @@ peer dependencies here so exactly one copy of React and MUI ends up in the bundl
 - **Hooks** for zoom and pan, and for an art viewer.
 - **Pure helpers** for name search and match spans, art layout, release-date formatting, and templated skill
   text.
-- **A theme factory** that takes a palette and domain colour maps and returns a configured dark MUI theme.
+- **A theme factory** that takes an archive's palette and returns a dark MUI theme carrying the kit's type scale and component defaults.
 - **Data primitives** - a retry-safe fetch and cache layer, and a shard resolver, both taking their URLs from
   the app.
 - **An asset URL builder factory**, so the host stays switchable.
