@@ -1,3 +1,9 @@
+/** English month abbreviations, fixed so the output never depends on the reader's locale. */
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
+
+/** The region named in the output when a caller does not say. Both archives cover the English release, which each game calls Global. */
+const DEFAULT_REGION = "Global";
+
 /** How precisely a release date is known. `unreleased` marks a subject that never reached the region. */
 export type ReleasePrecision = "day" | "month" | "launch" | "unknown" | "unreleased";
 
@@ -8,12 +14,6 @@ export interface Release {
 	/** How precise `date` is. `launch` marks the subjects on the region's launch roster. */
 	precision: ReleasePrecision;
 }
-
-/** English month abbreviations, fixed so the output never depends on the reader's locale. */
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] as const;
-
-/** The region named in the output when a caller does not say. Both archives cover the English release, which each game calls Global. */
-const DEFAULT_REGION = "Global";
 
 /**
  * Turn a `YYYY-MM` prefix into a short month and year, such as `Sep 2024`.
