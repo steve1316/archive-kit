@@ -15,12 +15,17 @@ export type DomainColours<K extends PropertyKey = number> = Record<K, string>;
 declare module "@mui/material/styles" {
 	interface Palette {
 		// Optional on purpose. `createTheme` fills defaults for MUI's own slots but never for an added one, so a required type here would
-		// promise something nothing delivers and turn a forgotten slot into a runtime crash instead of a type error.
+		// promise something nothing delivers and turn a forgotten slot into a runtime crash instead of a type error. `createArchiveTheme`
+		// requires them in its own options type, which is where the guarantee belongs.
+		/** One step above `background.paper`, for panels that sit on top of a card. The kit's card, tooltip and app bar defaults paint with it. */
+		raised?: string;
 		/** Chip and star colours keyed by a unit's rarity. The app supplies it, since each game numbers its rarities its own way. */
 		rarity?: DomainColours;
 	}
 
 	interface PaletteOptions {
+		/** See `Palette.raised`. */
+		raised?: string;
 		/** See `Palette.rarity`. */
 		rarity?: DomainColours;
 	}
