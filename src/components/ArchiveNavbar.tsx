@@ -223,6 +223,8 @@ interface ArchiveNavbarProps {
 	searchLabel?: string;
 	/** The search field's label after a submit that matched nothing. */
 	noMatchLabel?: string;
+	/** Called each time the search field takes focus, so an app can fetch options it keeps out of the bundle until someone searches. */
+	onSearchFocus?: () => void;
 }
 
 /**
@@ -234,7 +236,7 @@ interface ArchiveNavbarProps {
  * @param props Component props.
  * @returns The application bar and its navigation drawer.
  */
-export default function ArchiveNavbar({ title, navItems, searchOptions, homeLink = "/", searchLabel = "Search...", noMatchLabel = "No match found" }: ArchiveNavbarProps) {
+export default function ArchiveNavbar({ title, navItems, searchOptions, homeLink = "/", searchLabel = "Search...", noMatchLabel = "No match found", onSearchFocus }: ArchiveNavbarProps) {
 	const navigate = useNavigate();
 	const theme = useTheme();
 	// The bar cannot hold a title and a search field at once on a phone, so below `sm` the field is folded behind an icon.
@@ -334,6 +336,7 @@ export default function ArchiveNavbar({ title, navItems, searchOptions, homeLink
 				clearOnEscape
 				renderInput={renderSearchInput}
 				renderOption={renderSearchOption}
+				onFocus={onSearchFocus}
 			/>
 		</form>
 	);
