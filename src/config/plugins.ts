@@ -11,7 +11,8 @@
 /// <reference types="node" />
 
 import { copyFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, resolve } from "node:path";
 
 import type { Connect, Plugin } from "vite";
 
@@ -61,6 +62,42 @@ export function spaFallback(): Plugin {
 				return;
 			}
 			copyFileSync(resolve(options.dir, "index.html"), resolve(options.dir, "404.html"));
+		}
+	};
+}
+
+/**
+ * Write a copy of the built `index.html` at `<path>.html` for each route path the app lists.
+ *
+ * `spaFallback` makes a deep route render, but GitHub Pages still answers it with an HTTP 404, which search engines and link previews read as a
+ * missing page. Pages serves `operator/10.html` for `/operator/10`, so a route listed here answers 200. Routes left out still fall back to `404.html`.
+ *
+ * A listed path must not also be the folder of another, such as `operator/10` beside `operator/10/art`: Pages would then answer `/operator/10`
+ * with a redirect to `/operator/10/`. The build fails naming the clash rather than shipping it. The copy runs in `writeBundle`, for the reason
+ * `spaFallback` gives.
+ *
+ * @param paths Returns the route paths, relative to the base and without a leading or trailing slash. Called once per build.
+ * @returns The Vite plugin.
+ */
+export function routePages(paths: () => readonly string[] | Promise<readonly string[]>): Plugin {
+	return {
+		name: "route-pages",
+		apply: "build",
+		async writeBundle(options, bundle) {
+			const dir = options.dir;
+			if (dir === undefined || !Object.hasOwn(bundle, "index.html")) {
+				return;
+			}
+			const [html, list] = await Promise.all([readFile(resolve(dir, "index.html"), "utf8"), paths()]);
+			const pages = new Set(list);
+			const clash = list.find((page) => page.split("/").some((_, depth, parts) => depth > 0 && pages.has(parts.slice(0, depth).join("/"))));
+			if (clash !== undefined) {
+				throw new Error(`route-pages: ${clash} would put a folder beside the page of one of its parent routes`);
+			}
+			const folders = new Set(list.map((page) => dirname(resolve(dir, page))));
+			await Promise.all([...folders].map((folder) => mkdir(folder, { recursive: true })));
+			await Promise.all(list.map((page) => writeFile(resolve(dir, `${page}.html`), html)));
+			this.info(`wrote ${list.length} route pages`);
 		}
 	};
 }

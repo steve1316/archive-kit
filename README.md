@@ -58,11 +58,13 @@ Everything above is imported from `archive-kit` and runs in the browser. The bui
 `archive-kit/config` instead, so `vite` never enters an app's client bundle graph:
 
 ```ts
-import { spaFallback, baseTrailingSlash } from "archive-kit/config";
+import { spaFallback, routePages, baseTrailingSlash } from "archive-kit/config";
 ```
 
 `spaFallback()` copies the built `index.html` to `404.html`, which is how a static host with no rewrite rules
-still serves a deep route. `baseTrailingSlash()` redirects the bare base path to the base path in the dev and
+still serves a deep route. `routePages(() => paths)` goes one step further for the routes you list, such as
+`operator/10`: it writes a copy at `operator/10.html`, so GitHub Pages answers that route with a 200 rather
+than a 404 that happens to render. `baseTrailingSlash()` redirects the bare base path to the base path in the dev and
 preview servers. Both read the resolved Vite config rather than guessing, so a custom `base` or `outDir` is
 honoured.
 
