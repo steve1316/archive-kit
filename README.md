@@ -80,6 +80,8 @@ Three files are shipped to copy rather than import:
 The Dockerfile is worth reading before writing your own: `node:22-alpine` ships no git, and this package
 installs from a git URL and builds itself at install time, so the build stage needs `apk add --no-cache git`
 or the install fails with `sh: git: not found`.
+It also copies `pnpm-workspace.yaml` before installing, since that is where the `allowBuilds` entry lives, and
+without it the install fails with `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED`.
 
 ## What is deliberately not in it
 

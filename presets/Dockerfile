@@ -1,7 +1,8 @@
 # Build an archive into a static bundle and serve it from nginx at the root. Copy to the app's repo root, along with `nginx.conf`,
 # `docker-compose.yml` and `.dockerignore`.
 
-# Build stage. Only the manifest and lockfile are needed to install, so dependencies stay cached across source-only changes.
+# Build stage. Only the manifest, lockfile and workspace file are needed to install, so dependencies stay cached across source-only changes.
+# The workspace file carries the `allowBuilds` entry, without which pnpm refuses to build archive-kit.
 FROM node:22-alpine AS build
 
 WORKDIR /app
@@ -11,7 +12,7 @@ RUN corepack enable
 # `sh: git: not found`. Verified by running it.
 RUN apk add --no-cache git
 
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # pnpm refuses packages published more recently than `minimumReleaseAge`, which is a sensible default against a freshly compromised release. It
 # is disabled here only because the container resolves from scratch on every build, so a dependency that is merely new fails a build that a
