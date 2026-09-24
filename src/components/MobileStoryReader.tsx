@@ -15,6 +15,7 @@ import HideNavbar from "./HideNavbar.js";
 import ReaderSheet from "./ReaderSheet.js";
 import StoryCorner from "./StoryCorner.js";
 import type { StoryCornerProps } from "./StoryCorner.js";
+import { END_BLACK_SX } from "./StoryEndCard.js";
 import StoryLogSheet from "./StoryLogSheet.js";
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -338,7 +339,7 @@ export interface MobileStoryReaderProps {
 	current: StoryCurrentLine | null;
 	/** The choices to pick from, which take the box's place. */
 	choices?: readonly StoryChoice[] | null;
-	/** What shows at the story's end, such as links to the next story, under the current line. */
+	/** What shows at the story's end, usually an inline `StoryEndCard`, under the current line. The scene fades to black while it is set. */
 	end?: ReactNode;
 	/** Called when the reader taps the scene or the box to read on. */
 	onAdvance: () => void;
@@ -643,6 +644,7 @@ function MobileStoryReader({
 			<Box sx={STAGE_REGION_SX} onClick={onAdvance}>
 				<Box sx={STAGE_BOX_SX} data-region="reader-scene">
 					{scene}
+					{end ? <Box sx={END_BLACK_SX} data-region="story-end-black" /> : null}
 					{corner ? <StoryCorner progress={corner.progress} track={corner.track} /> : null}
 				</Box>
 			</Box>
