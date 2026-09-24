@@ -23,15 +23,12 @@ const READOUT_SX = { color: "text.secondary", fontVariantNumeric: "tabular-nums"
 /** The slider, inset a little so its thumb stays inside the panel at either end. */
 const SLIDER_SX = { display: "block", width: "auto", mx: 0.75 } satisfies SxProps<Theme>;
 
-/** The setters, by the setting each one changes. */
-const SETTERS = { speed: "setSpeed", bgm: "setBgm", sfx: "setSfx", sceneSize: "setSceneSize" } as const satisfies Record<keyof StorySettings, keyof StorySettingsState>;
-
 /** The sliders, in the order they show. The scene size is the phone reader's alone. */
 const ROWS: readonly SettingRow[] = [
-	{ key: "speed", label: "Text speed", format: formatSpeed },
-	{ key: "bgm", label: "BGM volume", format: formatShare },
-	{ key: "sfx", label: "SFX volume", format: formatShare },
-	{ key: "sceneSize", label: "Scene size", format: formatShare }
+	{ key: "speed", label: "Text speed", format: formatSpeed, setter: (settings) => settings.setSpeed },
+	{ key: "bgm", label: "BGM volume", format: formatShare, setter: (settings) => settings.setBgm },
+	{ key: "sfx", label: "SFX volume", format: formatShare, setter: (settings) => settings.setSfx },
+	{ key: "sceneSize", label: "Scene size", format: formatShare, setter: (settings) => settings.setSceneSize }
 ];
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -46,6 +43,8 @@ interface SettingRow {
 	label: string;
 	/** Turns a value into the readout beside the label. */
 	format: (value: number) => string;
+	/** Picks this setting's setter from the settings. */
+	setter: (value: StorySettingsState) => (next: number) => void;
 }
 
 /** Props for StorySettingsPanel. */
@@ -146,7 +145,7 @@ function StorySettingsPanel({ value, sceneSize = false, children }: StorySetting
 		<Box sx={PANEL_SX}>
 			{ROWS.map((row) =>
 				row.key === "sceneSize" && !sceneSize ? null : (
-					<SettingSlider key={row.key} label={row.label} value={value[row.key]} range={STORY_SETTING_RANGES[row.key]} format={row.format} onChange={value[SETTERS[row.key]]} />
+					<SettingSlider key={row.key} label={row.label} value={value[row.key]} range={STORY_SETTING_RANGES[row.key]} format={row.format} onChange={row.setter(value)} />
 				)
 			)}
 			{children}
