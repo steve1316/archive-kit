@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CSSProperties, MouseEvent, ReactNode } from "react";
+import type { CSSProperties, KeyboardEvent, MouseEvent, ReactNode } from "react";
 
 import { Box, Fab, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
@@ -25,7 +25,12 @@ const FAILED_TEXT = "Couldn't load this animation.";
 const BOX_SX = { position: "relative", overflow: "hidden", display: "grid", placeItems: "center" } satisfies SxProps<Theme>;
 
 /** The gesture surface over the whole box. It holds the runtime's canvas and takes the clicks, wheel and drags. */
-const SURFACE_SX = { position: "absolute", inset: 0 } satisfies SxProps<Theme>;
+const SURFACE_SX = {
+	position: "absolute",
+	inset: 0,
+	// Drawn inside the edge, since the box clips anything outside it.
+	"&:focus-visible": { outline: "2px solid", outlineColor: "primary.main", outlineOffset: "-2px" }
+} satisfies SxProps<Theme>;
 
 /** The element a runtime draws into. Its canvas fills it, and the runtime sizes the backing store. */
 const HOST_SX = { position: "absolute", inset: 0, "& > canvas": { display: "block", width: "100%", height: "100%" } } satisfies SxProps<Theme>;
@@ -410,9 +415,9 @@ function LiveStage<S>({
 		};
 	}, [runtime, ready, onScreen]);
 
-	// A drag ends in a click, so only a click that never moved steps to the next entry. Every entry loops, so the cycle never stalls.
-	const handleClick = useCallback(() => {
-		if (!interactive || !runtime || !ready || wasDragged()) {
+	// Steps to the next entry, wrapping. Every entry loops, so the cycle never stalls.
+	const step = useCallback(() => {
+		if (!interactive || !runtime || !ready) {
 			return;
 		}
 		const next = (index + 1) % entries.length;
@@ -426,7 +431,25 @@ function LiveStage<S>({
 		} catch {
 			failRef.current();
 		}
-	}, [interactive, runtime, ready, wasDragged, entries, index]);
+	}, [interactive, runtime, ready, entries, index]);
+
+	// A drag ends in a click, so only a click that never moved steps.
+	const handleClick = useCallback(() => {
+		if (!wasDragged()) {
+			step();
+		}
+	}, [wasDragged, step]);
+
+	// Enter and Space step too, so the stage works from the keyboard as the chip rows it replaced did.
+	const handleKeyDown = useCallback(
+		(event: KeyboardEvent<HTMLDivElement>) => {
+			if (event.key === "Enter" || event.key === " ") {
+				event.preventDefault();
+				step();
+			}
+		},
+		[step]
+	);
 
 	const handleReset = useCallback(
 		(event: MouseEvent<HTMLButtonElement>) => {
@@ -439,7 +462,17 @@ function LiveStage<S>({
 	return (
 		<>
 			<Box sx={[BOX_SX, ...(Array.isArray(sx) ? sx : [sx ?? false])]} data-region="animation-stage">
-				<Box ref={surfaceRef} sx={SURFACE_SX} style={{ ...zoom.containerStyle, visibility: ready ? "visible" : "hidden" }} onPointerDown={zoom.handlers.onPointerDown} onClick={handleClick}>
+				<Box
+					ref={surfaceRef}
+					sx={SURFACE_SX}
+					style={{ ...zoom.containerStyle, visibility: ready ? "visible" : "hidden" }}
+					onPointerDown={zoom.handlers.onPointerDown}
+					onClick={handleClick}
+					role={interactive ? "button" : undefined}
+					tabIndex={interactive ? 0 : undefined}
+					aria-label={interactive ? `${label} - next animation` : undefined}
+					onKeyDown={interactive ? handleKeyDown : undefined}
+				>
 					<Box ref={hostRef} sx={HOST_SX} role="img" aria-label={label} />
 				</Box>
 				{message !== null ? renderMessage(message.text, message.kind) : null}
