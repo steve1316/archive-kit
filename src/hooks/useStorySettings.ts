@@ -86,8 +86,7 @@ function normaliseFlag(value: unknown): boolean {
 }
 
 /**
- * Read the saved settings. A field the saved object lacks, such as one added after it was written, or every field when nothing is saved,
- * comes from `initial` instead.
+ * Read the saved settings. A field the saved object lacks, such as one added after it was written, or every field when nothing is saved, comes from `initial` instead.
  *
  * @param storageKey The site's storage key.
  * @param initial Values for anything not saved yet.
