@@ -32,6 +32,34 @@ const TITLE_ROW_SX = { display: "flex", alignItems: "center", gap: 1 } satisfies
 /** The title, which takes the row's spare width. */
 const TITLE_SX = { flex: 1 } satisfies SxProps<Theme>;
 
+/** Props for SheetTitle. */
+interface SheetTitleProps {
+	/** The title shown, and read out by the close button's label. */
+	title: string;
+	/** Called to close the sheet or panel. */
+	onClose: () => void;
+}
+
+/**
+ * The title row shared by a sheet and the desktop Log panel: the title as an h6, and a close button labelled "Close the " plus the lowercased
+ * title. Kept out of the index, since it is a building block for the kit's own story panels rather than something a site uses on its own.
+ *
+ * @param props Component props.
+ * @returns The title and its close button.
+ */
+export function SheetTitle({ title, onClose }: SheetTitleProps) {
+	return (
+		<>
+			<Typography component="h2" variant="h6" sx={TITLE_SX}>
+				{title}
+			</Typography>
+			<IconButton aria-label={`Close the ${title.toLowerCase()}`} onClick={onClose} size="small">
+				<CloseIcon />
+			</IconButton>
+		</>
+	);
+}
+
 /** Props for ReaderSheet. */
 interface ReaderSheetProps {
 	/** The sheet's title, such as "Log" or "Settings". */
@@ -69,12 +97,7 @@ function ReaderSheet({ title, openAtEnd = false, sx, onClose, children }: Reader
 		<Box ref={sheet} sx={[SHEET_SX, ...(Array.isArray(sx) ? sx : [sx ?? false])]} role="dialog" aria-label={title}>
 			<Box sx={HEADER_SX}>
 				<Box sx={TITLE_ROW_SX}>
-					<Typography component="h2" variant="h6" sx={TITLE_SX}>
-						{title}
-					</Typography>
-					<IconButton aria-label={`Close the ${title.toLowerCase()}`} onClick={onClose} size="small">
-						<CloseIcon />
-					</IconButton>
+					<SheetTitle title={title} onClose={onClose} />
 				</Box>
 			</Box>
 			{children}

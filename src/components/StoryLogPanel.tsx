@@ -1,14 +1,14 @@
 import { memo, useCallback, useLayoutEffect, useRef } from "react";
 import type { RefObject } from "react";
 
-import { Box, IconButton, Typography } from "@mui/material";
+import { Box } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 
 import { useCloseOnEscape } from "../hooks/useArtViewer.js";
 import { useCloseOnOutsidePress } from "../hooks/useCloseOnOutsidePress.js";
 import { stopClick } from "../lib/events.js";
 import type { StoryLine } from "./MobileStoryReader.js";
+import { SheetTitle } from "./ReaderSheet.js";
 import { LOG_LINES_SX, LogLines } from "./StoryLogSheet.js";
 
 /** The header's background, solid so the lines scrolling under it do not bleed through. */
@@ -41,9 +41,6 @@ const PANEL_SX = (theme: Theme) => ({
 
 /** The pinned header: the title and the close button. */
 const HEADER_SX = { position: "sticky", top: 0, zIndex: 1, background: HEADER_BG, pt: 2, pb: 1.5, mb: 0.5, display: "flex", alignItems: "center", gap: 1 } satisfies SxProps<Theme>;
-
-/** The title, which takes the row's spare width. */
-const TITLE_SX = { flex: 1 } satisfies SxProps<Theme>;
 
 /** Props for StoryLogPanel. */
 export interface StoryLogPanelProps {
@@ -84,12 +81,7 @@ function StoryLogPanel({ title, lines, onClose, container, sx }: StoryLogPanelPr
 	return (
 		<Box ref={panel} sx={[PANEL_SX, ...(Array.isArray(sx) ? sx : [sx ?? false])]} onClick={stopClick} role="dialog" aria-label={title} data-region="story-log">
 			<Box sx={HEADER_SX}>
-				<Typography component="h2" variant="h6" sx={TITLE_SX}>
-					{title}
-				</Typography>
-				<IconButton aria-label={`Close the ${title.toLowerCase()}`} onClick={onClose} size="small">
-					<CloseIcon />
-				</IconButton>
+				<SheetTitle title={title} onClose={onClose} />
 			</Box>
 			<LogLines lines={lines} />
 		</Box>
