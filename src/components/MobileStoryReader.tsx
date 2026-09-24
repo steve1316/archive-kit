@@ -16,7 +16,7 @@ import ReaderSheet from "./ReaderSheet.js";
 import StoryCorner from "./StoryCorner.js";
 import type { StoryCornerProps } from "./StoryCorner.js";
 import { END_BLACK_SX } from "./StoryEndCard.js";
-import StoryLogSheet from "./StoryLogSheet.js";
+import StoryLogSheet, { renderStoryLine } from "./StoryLogSheet.js";
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -507,26 +507,7 @@ const Transcript = memo(function Transcript({ lines }: { lines: readonly StoryLi
 
 	return (
 		<Box ref={scroller} sx={TRANSCRIPT_SX} onScroll={onScroll}>
-			<Box sx={TRANSCRIPT_INNER_SX}>
-				{lines.map((line, index) =>
-					line.kind === "choice" ? (
-						<div key={index} className="reader-line reader-choice">
-							{"> "}
-							{line.text}
-						</div>
-					) : line.kind === "track" ? (
-						<div key={index} className="reader-line reader-track">
-							{"\u266a Now Playing: "}
-							{line.text}
-						</div>
-					) : (
-						<div key={index} className="reader-line">
-							{line.speaker ? <span className="reader-speaker">{line.speaker}: </span> : null}
-							{line.text}
-						</div>
-					)
-				)}
-			</Box>
+			<Box sx={TRANSCRIPT_INNER_SX}>{lines.map((line, index) => renderStoryLine(line, index, "reader", "inline"))}</Box>
 		</Box>
 	);
 });
@@ -577,8 +558,7 @@ function MobileStoryReader({
 	const picking = !!choices?.length;
 	const openSettings = useCallback(() => setSettingsOpen(true), []);
 	const closeSettings = useCallback(() => setSettingsOpen(false), []);
-	// The site hears when the Settings sheet covers the story, so its keys and AUTO can wait. A reader that goes away with the sheet open says
-	// it closed.
+	// The site hears when the Settings sheet covers the story, so its keys and AUTO can wait. A reader that goes away with the sheet open says it closed.
 	const panelChange = useRef(onPanelChange);
 	useEffect(() => {
 		panelChange.current = onPanelChange;
