@@ -60,6 +60,11 @@ function stopClick(event: ReactMouseEvent) {
  */
 function OpenCard({ onClose, sx, children }: Omit<StorySettingsCardProps, "open">) {
 	const card = useRef<HTMLDivElement>(null);
+	// Read through a ref, so a new `onClose` on a re-render does not reset a press that is still going on.
+	const close = useRef(onClose);
+	useEffect(() => {
+		close.current = onClose;
+	}, [onClose]);
 
 	// Taken before the page's own keys, so closing the card does not also run a page shortcut bound to Escape.
 	useCloseOnEscape(onClose, true);
@@ -81,7 +86,7 @@ function OpenCard({ onClose, sx, children }: Omit<StorySettingsCardProps, "open"
 			event.stopPropagation();
 			event.preventDefault();
 			if (!began) {
-				onClose();
+				close.current();
 			}
 		};
 		window.addEventListener("pointerdown", onDown, true);
@@ -90,7 +95,7 @@ function OpenCard({ onClose, sx, children }: Omit<StorySettingsCardProps, "open"
 			window.removeEventListener("pointerdown", onDown, true);
 			window.removeEventListener("click", onClick, true);
 		};
-	}, [onClose]);
+	}, []);
 
 	return (
 		<Box ref={card} sx={[CARD_SX, ...(Array.isArray(sx) ? sx : [sx ?? false])]} onClick={stopClick} role="dialog" aria-label="Settings">
