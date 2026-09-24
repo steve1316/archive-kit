@@ -120,8 +120,8 @@ export function useZoomPan<T extends HTMLElement = HTMLElement>(options: UseZoom
 	// way and left it behind the pointer.
 	const dragStart = useRef<{ x: number; y: number; originX: number; originY: number } | null>(null);
 
-	// Set once the current gesture has panned or pinched. Every drag ends in a click event, and callers that
-	// also act on a click need to tell those apart from a click that never moved.
+	// Set once the current gesture has pinched or travelled past the drag threshold, even with nothing to pan. Every drag ends in a click
+	// event, and callers that also act on a click need to tell those apart from a click that never moved.
 	const moved = useRef(false);
 
 	// True only while at least one pointer is down. Drives the cursor, nothing else: the listeners below are

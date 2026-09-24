@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { MouseEvent, ReactNode } from "react";
+import type { CSSProperties, MouseEvent, ReactNode } from "react";
 
 import { Box, Fab, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
@@ -14,9 +14,6 @@ import ErrorBoundary from "./ErrorBoundary.js";
 
 /** Longest step one frame may take, in seconds, so a stall is not played back as one jump. */
 const MAX_DELTA = 0.1;
-
-/** Highest device pixel ratio handed to a runtime. Fill cost grows with its square, and past 3x there is nothing left to gain. */
-const MAX_PIXEL_RATIO = 3;
 
 /** Shown while the runtime or a source loads. */
 const LOADING_TEXT = "Loading...";
@@ -42,11 +39,14 @@ const RESET_SX: Record<"left" | "right", SxProps<Theme>> = {
 	right: { position: "absolute", right: 8, bottom: 8, opacity: 0.9 }
 };
 
-/** The caption under the stage, naming the playing animation. A flex column, so the caption line is its own height rather than the body's. */
-const CAPTION_SX = { flex: "none", mt: 0.875, textAlign: "center", display: "flex", flexDirection: "column" } satisfies SxProps<Theme>;
+/** The caption under the stage, naming the playing animation. While nothing plays it is hidden but keeps its height, so the stage does not jump. */
+const CAPTION_SX = { flex: "none", mt: 0.875, textAlign: "center" } satisfies SxProps<Theme>;
 
-/** The caption while nothing plays: hidden, but still holding its height, so the stage does not jump when an animation loads. */
-const CAPTION_HIDDEN_SX = { flex: "none", mt: 0.875, textAlign: "center", display: "flex", flexDirection: "column", visibility: "hidden" } satisfies SxProps<Theme>;
+/** The caption line. A block, so its height is its own line height rather than the surrounding body text's. */
+const CAPTION_TEXT_SX = { display: "block" } satisfies SxProps<Theme>;
+
+/** Hides the caption without taking its height away. */
+const HIDDEN_STYLE: CSSProperties = { visibility: "hidden" };
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -80,13 +80,12 @@ export interface StageRuntime<S> {
 	 */
 	play(key: string): void;
 	/**
-	 * The stage box changed size.
+	 * The stage box changed size. The runtime picks its own pixel ratio.
 	 *
 	 * @param width Width in CSS pixels.
 	 * @param height Height in CSS pixels.
-	 * @param pixelRatio Device pixels per CSS pixel, already capped at 3.
 	 */
-	resize(width: number, height: number, pixelRatio: number): void;
+	resize(width: number, height: number): void;
 	/**
 	 * Zooms and pans inside the renderer, so the art stays sharp. The meaning matches a CSS `translate(x, y) scale(scale)` about the box's centre,
 	 * which is what `useZoomPan` describes.
@@ -140,10 +139,8 @@ interface LoadResult {
 	key: string;
 	/** The load the result belongs to. A result from any earlier load is stale, even for the same source. */
 	load: number;
-	/** Null once the source plays, or the message to show instead. */
-	message: string | null;
-	/** Whether the message reports a failure rather than a notice from the runtime. */
-	failed: boolean;
+	/** Null once the source plays, or what to show instead. */
+	message: StageMessage | null;
 }
 
 /** A message the stage shows in place of the animation. */
@@ -206,7 +203,6 @@ function LiveStage<S>({
 	sx
 }: AnimationStageProps<S>) {
 	const hostRef = useRef<HTMLDivElement | null>(null);
-	const runtimeRef = useRef<StageRuntime<S> | null>(null);
 	const mounted = useRef(true);
 	const started = useRef(false);
 	// Counts loads, so a result can be told apart from one an earlier load of the same source left behind.
@@ -236,29 +232,30 @@ function LiveStage<S>({
 		message = { text: notice, kind: "notice" };
 	} else if (runtimeFailed) {
 		message = { text: FAILED_TEXT, kind: "error" };
-	} else if (current !== null && current.message !== null) {
-		message = { text: current.message, kind: current.failed ? "error" : "notice" };
+	} else if (current !== null) {
+		message = current.message;
 	}
 	const loading = message === null && !ready;
 
 	// Marks the current load as failed, which swaps in the failure message. Read through a ref by the observers and the frame loop.
 	const fail = useCallback(() => {
 		if (sourceKey !== null) {
-			setResult({ key: sourceKey, load: loadCount.current, message: FAILED_TEXT, failed: true });
+			setResult({ key: sourceKey, load: loadCount.current, message: { text: FAILED_TEXT, kind: "error" } });
 		}
 	}, [sourceKey]);
 	const failRef = useRef(fail);
 	failRef.current = fail;
 
-	// Disposes the runtime on unmount. StrictMode's rehearsal runs this cleanup before a runtime exists, since building one is async.
+	// Tracks whether the stage is mounted, so a runtime that finishes building after unmount is disposed at once.
 	useEffect(() => {
 		mounted.current = true;
 		return () => {
 			mounted.current = false;
-			runtimeRef.current?.dispose();
-			runtimeRef.current = null;
 		};
 	}, []);
+
+	// Disposes the runtime on unmount. It is set once and never replaced, so this runs only then.
+	useEffect(() => () => runtime?.dispose(), [runtime]);
 
 	// Builds the runtime the first time there is something to play, so a page that never has a source never downloads it.
 	useEffect(() => {
@@ -273,7 +270,6 @@ function LiveStage<S>({
 					made.dispose();
 					return;
 				}
-				runtimeRef.current = made;
 				setRuntime(made);
 			},
 			() => {
@@ -299,12 +295,12 @@ function LiveStage<S>({
 			.then(
 				(outcome) => {
 					if (!controller.signal.aborted) {
-						setResult({ key: sourceKey, load, message: outcome, failed: false });
+						setResult({ key: sourceKey, load, message: outcome === null ? null : { text: outcome, kind: "notice" } });
 					}
 				},
 				() => {
 					if (!controller.signal.aborted) {
-						setResult({ key: sourceKey, load, message: FAILED_TEXT, failed: true });
+						setResult({ key: sourceKey, load, message: { text: FAILED_TEXT, kind: "error" } });
 					}
 				}
 			);
@@ -345,18 +341,24 @@ function LiveStage<S>({
 		return () => observer.disconnect();
 	}, [surfaceRef]);
 
-	// Hands every size the box takes to the runtime, starting with its first.
+	// Hands every size the box takes to the runtime, starting with its first. A sub-pixel change reports the same whole-pixel size, so it is skipped.
 	useEffect(() => {
 		const host = hostRef.current;
 		if (!runtime || !host) {
 			return;
 		}
+		let lastWidth = 0;
+		let lastHeight = 0;
 		const observer = new ResizeObserver(() => {
-			if (host.clientWidth === 0 || host.clientHeight === 0) {
+			const width = host.clientWidth;
+			const height = host.clientHeight;
+			if (width === 0 || height === 0 || (width === lastWidth && height === lastHeight)) {
 				return;
 			}
+			lastWidth = width;
+			lastHeight = height;
 			try {
-				runtime.resize(host.clientWidth, host.clientHeight, Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO));
+				runtime.resize(width, height);
 			} catch {
 				failRef.current();
 			}
@@ -410,7 +412,7 @@ function LiveStage<S>({
 
 	// A drag ends in a click, so only a click that never moved steps to the next entry. Every entry loops, so the cycle never stalls.
 	const handleClick = useCallback(() => {
-		if (!interactive || !runtime || !ready || wasDragged() || entries.length === 0) {
+		if (!interactive || !runtime || !ready || wasDragged()) {
 			return;
 		}
 		const next = (index + 1) % entries.length;
@@ -454,8 +456,8 @@ function LiveStage<S>({
 				{overlay}
 			</Box>
 			{interactive && entries.length > 0 ? (
-				<Box sx={ready && entry ? CAPTION_SX : CAPTION_HIDDEN_SX}>
-					<Typography variant="caption" color="text.primary" aria-live="polite">
+				<Box sx={CAPTION_SX} style={ready && entry ? undefined : HIDDEN_STYLE}>
+					<Typography variant="caption" color="text.primary" aria-live="polite" sx={CAPTION_TEXT_SX}>
 						{ready && entry ? `${entry.label} - ${index + 1} / ${entries.length}` : "\u00a0"}
 					</Typography>
 				</Box>
