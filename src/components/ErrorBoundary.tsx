@@ -7,6 +7,8 @@ interface ErrorBoundaryProps {
 	children: ReactNode;
 	/** Shown in place of `children` once a descendant has thrown. Nothing is rendered when it is left out, since wording and routes are the app's. */
 	fallback?: ReactNode;
+	/** Clears a caught error when it changes, so the subtree gets another try, such as a stage moving to the next rig. Changing it while nothing has thrown does nothing. */
+	resetKey?: unknown;
 }
 
 /** State for ErrorBoundary. */
@@ -45,6 +47,17 @@ export default class ErrorBoundary extends React.Component<ErrorBoundaryProps, E
 	componentDidCatch(error: Error, errorInfo: ErrorInfo) {
 		console.log("ErrorBoundary - error: ", error);
 		console.log("ErrorBoundary - error info: ", errorInfo);
+	}
+
+	/**
+	 * Leave the error state once `resetKey` changes, so the next render tries the subtree again.
+	 *
+	 * @param previous The props from the render before this one.
+	 */
+	componentDidUpdate(previous: ErrorBoundaryProps) {
+		if (this.state.hasError && previous.resetKey !== this.props.resetKey) {
+			this.setState({ hasError: false, error: null });
+		}
 	}
 
 	/**
