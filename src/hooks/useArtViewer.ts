@@ -30,18 +30,23 @@ export function useArtPanBounds(artRef: RefObject<HTMLImageElement | null>): Non
 }
 
 /**
- * Run `close` when the Escape key is pressed anywhere on the page.
+ * Run `close` when the Escape key is pressed anywhere on the page. With `first`, it hears the key before the page's own key handlers and
+ * keeps it from them, so closing a panel does not also run a page shortcut bound to Escape.
  *
- * @param close Closes the viewer.
+ * @param close Closes the viewer or panel.
+ * @param first Whether to take Escape before anything else on the page.
  */
-export function useCloseOnEscape(close: () => void): void {
+export function useCloseOnEscape(close: () => void, first = false): void {
 	useEffect(() => {
 		const onKey = (event: KeyboardEvent) => {
 			if (event.key === "Escape") {
+				if (first) {
+					event.stopPropagation();
+				}
 				close();
 			}
 		};
-		window.addEventListener("keydown", onKey);
-		return () => window.removeEventListener("keydown", onKey);
-	}, [close]);
+		window.addEventListener("keydown", onKey, first);
+		return () => window.removeEventListener("keydown", onKey, first);
+	}, [close, first]);
 }
