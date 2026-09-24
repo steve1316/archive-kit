@@ -79,6 +79,8 @@ export type { DomainColours } from "./theme/augmentation.js";
 export { useArtPanBounds, useCloseOnEscape } from "./hooks/useArtViewer.js";
 export { useFullscreen } from "./hooks/useFullscreen.js";
 export type { FullscreenState } from "./hooks/useFullscreen.js";
+export { useMediaSession } from "./hooks/useMediaSession.js";
+export type { MediaSessionInfo } from "./hooks/useMediaSession.js";
 export { MOBILE_LANDSCAPE_QUERY, MOBILE_QUERY, useIsMobile } from "./hooks/useMobileLayout.js";
 export { useZoomPan } from "./hooks/useZoomPan.js";
 export type { UseZoomPanOptions, UseZoomPanResult, ZoomPanTransform } from "./hooks/useZoomPan.js";
