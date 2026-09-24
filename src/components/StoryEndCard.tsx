@@ -1,10 +1,11 @@
 import { memo } from "react";
-import type { MouseEvent } from "react";
 import { Link } from "react-router-dom";
 
 import { Box, Button, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
 import { keyframes } from "@mui/material/styles";
+
+import { stopClick } from "../lib/events.js";
 
 /** How long the scene takes to fade to black, in seconds. */
 const BLACK_S = 1.2;
@@ -16,8 +17,7 @@ const CARD_S = 0.5;
 const FADE_IN = keyframes`from { opacity: 0; } to { opacity: 1; }`;
 
 /**
- * The black the scene fades to at its end. The phone reader lays it over its own scene too. It takes no clicks, so the scene's own handlers
- * still get theirs.
+ * The black the scene fades to at its end. The phone reader lays it over its own scene too. It takes no clicks, so the scene's own handlers still get theirs.
  */
 export const END_BLACK_SX = { position: "absolute", inset: 0, zIndex: 4, bgcolor: "#000", pointerEvents: "none", animation: `${FADE_IN} ${BLACK_S}s ease-out both` } satisfies SxProps<Theme>;
 
@@ -84,15 +84,6 @@ export interface StoryEndCardProps {
 	variant: "stage" | "inline";
 	/** The palette colour of Next and Read again, the site's accent. Defaults to primary. */
 	color?: "primary" | "secondary";
-}
-
-/**
- * Keep a click on the end from reaching the stage under it.
- *
- * @param event The click.
- */
-function stopClick(event: MouseEvent) {
-	event.stopPropagation();
 }
 
 /**

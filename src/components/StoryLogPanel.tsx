@@ -1,5 +1,5 @@
 import { memo, useCallback, useLayoutEffect, useRef } from "react";
-import type { MouseEvent, RefObject } from "react";
+import type { RefObject } from "react";
 
 import { Box, IconButton, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
@@ -7,6 +7,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import { useCloseOnEscape } from "../hooks/useArtViewer.js";
 import { useCloseOnOutsidePress } from "../hooks/useCloseOnOutsidePress.js";
+import { stopClick } from "../lib/events.js";
 import type { StoryLine } from "./MobileStoryReader.js";
 import { LOG_LINES_SX, LogLines } from "./StoryLogSheet.js";
 
@@ -15,8 +16,7 @@ const HEADER_BG = "#08090d";
 
 /**
  * The panel: a drawer over the right of the player, which lets the story show faintly through. Absolute rather than portalled, so it stays
- * inside a fullscreen player, and above a site's chrome, choices and end. Its two colours are the reader's variables, so a site sets its own
- * with `sx`.
+ * inside a fullscreen player, and above a site's chrome, choices and end. Its two colours are the reader's variables, so a site sets its own with `sx`.
  */
 const PANEL_SX = (theme: Theme) => ({
 	"--reader-accent": theme.palette.primary.main,
@@ -57,15 +57,6 @@ export interface StoryLogPanelProps {
 	container: RefObject<HTMLElement | null>;
 	/** Extra styles, such as the site's own `--reader-accent` and `--reader-pick`. */
 	sx?: SxProps<Theme>;
-}
-
-/**
- * Keep a click inside the panel from reaching the player under it, which would read on.
- *
- * @param event The click.
- */
-function stopClick(event: MouseEvent) {
-	event.stopPropagation();
 }
 
 /**

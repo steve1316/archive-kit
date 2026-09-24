@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { Box, IconButton, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
@@ -7,6 +7,7 @@ import CloseIcon from "@mui/icons-material/Close";
 
 import { useCloseOnEscape } from "../hooks/useArtViewer.js";
 import { useCloseOnOutsidePress } from "../hooks/useCloseOnOutsidePress.js";
+import { stopClick } from "../lib/events.js";
 
 /** The card: a small dark panel over the player, placed by the site's `sx`. It scrolls rather than running off a short player. */
 const CARD_SX = {
@@ -42,15 +43,6 @@ export interface StorySettingsCardProps {
 	sx?: SxProps<Theme>;
 	/** The card's content, usually a `StorySettingsPanel`. */
 	children: ReactNode;
-}
-
-/**
- * Keep a click inside the card from reaching the player under it, which would read on.
- *
- * @param event The click.
- */
-function stopClick(event: ReactMouseEvent) {
-	event.stopPropagation();
 }
 
 /**

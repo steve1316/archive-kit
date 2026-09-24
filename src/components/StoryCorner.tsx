@@ -1,8 +1,9 @@
 import { memo, useCallback, useEffect, useRef, useState } from "react";
-import type { MouseEvent } from "react";
 
 import { Box } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
+
+import { stopClick } from "../lib/events.js";
 
 /** How long a track's title shows after the track starts, in milliseconds. */
 const SHOW_MS = 3000;
@@ -64,15 +65,6 @@ export interface StoryCornerProps {
 	progress: { at: number; total: number } | null;
 	/** The track that started, or null for none. A new object is a new play, even of the same track, and shows its title again. */
 	track: { title: string } | null;
-}
-
-/**
- * Keep a click on the corner from reaching the scene, which would read on, so selecting the title leaves the story where it is.
- *
- * @param event The click.
- */
-function stopClick(event: MouseEvent) {
-	event.stopPropagation();
 }
 
 /**
