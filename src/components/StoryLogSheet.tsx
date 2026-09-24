@@ -1,5 +1,4 @@
 import { memo } from "react";
-import type { ReactNode } from "react";
 
 import type { SxProps, Theme } from "@mui/material";
 
@@ -19,8 +18,6 @@ interface StoryLogSheetProps {
 	title: string;
 	/** Everything read so far, oldest first. */
 	lines: readonly StoryLine[];
-	/** Anything the site pins under the title, such as the reader's name field. */
-	header?: ReactNode;
 	/** Called to close the sheet. */
 	onClose: () => void;
 }
@@ -32,9 +29,9 @@ interface StoryLogSheetProps {
  * @param props Component props.
  * @returns The sheet.
  */
-function StoryLogSheet({ title, lines, header, onClose }: StoryLogSheetProps) {
+function StoryLogSheet({ title, lines, onClose }: StoryLogSheetProps) {
 	return (
-		<ReaderSheet title={title} header={header} openAtEnd sx={LOG_SX} onClose={onClose}>
+		<ReaderSheet title={title} openAtEnd sx={LOG_SX} onClose={onClose}>
 			{lines.map((line, index) =>
 				line.kind === "choice" ? (
 					<div key={index} className="log-line log-choice">

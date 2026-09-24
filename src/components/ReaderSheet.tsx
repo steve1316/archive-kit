@@ -23,14 +23,11 @@ const SHEET_SX = {
 	cursor: "default"
 } satisfies SxProps<Theme>;
 
-/** The pinned header: the title, the close button and whatever the sheet pins under them. */
+/** The pinned header: the title and the close button. */
 const HEADER_SX = { position: "sticky", top: 0, zIndex: 1, background: SHEET_BG, pt: 2, pb: 1.5, mb: 0.5 } satisfies SxProps<Theme>;
 
 /** The title row. */
 const TITLE_ROW_SX = { display: "flex", alignItems: "center", gap: 1 } satisfies SxProps<Theme>;
-
-/** The title row with something pinned under it. */
-const TITLE_ROW_SPACED_SX = { ...TITLE_ROW_SX, mb: 1 } satisfies SxProps<Theme>;
 
 /** The title, which takes the row's spare width. */
 const TITLE_SX = { flex: 1 } satisfies SxProps<Theme>;
@@ -39,8 +36,6 @@ const TITLE_SX = { flex: 1 } satisfies SxProps<Theme>;
 interface ReaderSheetProps {
 	/** The sheet's title, such as "Log" or "Settings". */
 	title: string;
-	/** Anything pinned under the title, such as a name field. */
-	header?: ReactNode;
 	/** Whether the sheet opens scrolled to its end, as the Log does to show the newest line. */
 	openAtEnd?: boolean;
 	/** Extra styles for the sheet, such as the classes of its content. */
@@ -58,7 +53,7 @@ interface ReaderSheetProps {
  * @param props Component props.
  * @returns The sheet.
  */
-function ReaderSheet({ title, header, openAtEnd = false, sx, onClose, children }: ReaderSheetProps) {
+function ReaderSheet({ title, openAtEnd = false, sx, onClose, children }: ReaderSheetProps) {
 	const sheet = useRef<HTMLDivElement>(null);
 
 	// Open at the end before the first paint, so the sheet never shows its top first.
@@ -73,7 +68,7 @@ function ReaderSheet({ title, header, openAtEnd = false, sx, onClose, children }
 	return (
 		<Box ref={sheet} sx={[SHEET_SX, ...(Array.isArray(sx) ? sx : [sx ?? false])]} role="dialog" aria-label={title}>
 			<Box sx={HEADER_SX}>
-				<Box sx={header ? TITLE_ROW_SPACED_SX : TITLE_ROW_SX}>
+				<Box sx={TITLE_ROW_SX}>
 					<Typography component="h2" variant="h6" sx={TITLE_SX}>
 						{title}
 					</Typography>
@@ -81,7 +76,6 @@ function ReaderSheet({ title, header, openAtEnd = false, sx, onClose, children }
 						<CloseIcon />
 					</IconButton>
 				</Box>
-				{header}
 			</Box>
 			{children}
 		</Box>

@@ -358,8 +358,6 @@ export interface MobileStoryReaderProps {
 	onCloseLog: () => void;
 	/** The Log's title. Defaults to "Log". */
 	logTitle?: string;
-	/** Anything pinned under the Log's title, such as the reader's name field. Memoise it, or the open Log re-renders on every typed character. */
-	logHeader?: ReactNode;
 	/**
 	 * The reader's settings, usually a `StorySettingsPanel`. When set, a Settings plate joins fullscreen at the end of the controls and opens
 	 * them in a sheet over the reader.
@@ -559,7 +557,6 @@ function MobileStoryReader({
 	logOpen,
 	onCloseLog,
 	logTitle = "Log",
-	logHeader,
 	settings,
 	sceneSize = 1,
 	frame = plainFrame,
@@ -644,7 +641,7 @@ function MobileStoryReader({
 					{frame(content, picking ? "choices" : "line")}
 				</Box>
 			</Box>
-			{logOpen ? <StoryLogSheet title={logTitle} lines={lines} header={logHeader} onClose={onCloseLog} /> : null}
+			{logOpen ? <StoryLogSheet title={logTitle} lines={lines} onClose={onCloseLog} /> : null}
 			{settingsOpen && hasSettings ? (
 				<ReaderSheet title="Settings" onClose={closeSettings}>
 					{settings}
