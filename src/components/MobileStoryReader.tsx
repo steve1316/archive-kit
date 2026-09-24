@@ -1,5 +1,5 @@
-import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
-import type { MouseEvent, ReactNode, UIEvent } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type { CSSProperties, MouseEvent, ReactNode, UIEvent } from "react";
 import { Link } from "react-router-dom";
 
 import { Box, ButtonBase, useMediaQuery } from "@mui/material";
@@ -7,10 +7,12 @@ import type { SxProps, Theme } from "@mui/material";
 import { keyframes } from "@mui/material/styles";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
 import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
+import SettingsIcon from "@mui/icons-material/Settings";
 
 import { useFullscreen } from "../hooks/useFullscreen.js";
 import { MOBILE_LANDSCAPE_QUERY } from "../hooks/useMobileLayout.js";
 import HideNavbar from "./HideNavbar.js";
+import ReaderSheet from "./ReaderSheet.js";
 import StoryLogSheet from "./StoryLogSheet.js";
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -52,23 +54,36 @@ const ROOT_SX = (theme: Theme) => ({
 });
 
 /**
- * The scene's region, which a tap reads on from. Upright it is the full width at 16:9. On its side it is the full height, as wide as 16:9 allows
- * while the text column keeps its minimum, with the scene centred in it.
+ * The scene's region, which a tap reads on from. Upright it is the full width, with the scene's box centred in it. On its side it takes the
+ * reader's scene size of the height, and is as wide as 16:9 allows while the text column keeps its minimum.
  */
 const STAGE_REGION_SX = {
 	flex: "none",
 	width: "100%",
 	display: "flex",
 	alignItems: "center",
+	justifyContent: "center",
 	cursor: "pointer",
 	userSelect: "none",
 	touchAction: "manipulation",
 	WebkitTapHighlightColor: "transparent",
-	[LANDSCAPE]: { width: "auto", height: "100%", aspectRatio: "16 / 9", maxWidth: `calc(100% - ${RAIL_WIDTH + MIN_TEXT_WIDTH}px)` }
+	[LANDSCAPE]: {
+		width: "auto",
+		height: "calc(100% * var(--scene-size, 1))",
+		alignSelf: "center",
+		aspectRatio: "16 / 9",
+		maxWidth: `calc((100% - ${RAIL_WIDTH + MIN_TEXT_WIDTH}px) * var(--scene-size, 1))`
+	}
 } satisfies SxProps<Theme>;
 
-/** The scene's own 16:9 box, which the site's scene fills. */
-const STAGE_BOX_SX = { position: "relative", width: "100%", aspectRatio: "16 / 9", overflow: "hidden" } satisfies SxProps<Theme>;
+/** The scene's own 16:9 box, which the site's scene fills. Upright it takes the reader's scene size of the width. */
+const STAGE_BOX_SX = {
+	position: "relative",
+	width: "calc(100% * var(--scene-size, 1))",
+	aspectRatio: "16 / 9",
+	overflow: "hidden",
+	[LANDSCAPE]: { width: "100%" }
+} satisfies SxProps<Theme>;
 
 /** Where the scene stands, quietly, in its bottom right corner. */
 const CAPTION_SX = {
@@ -118,20 +133,21 @@ const RAIL_SX = {
 } satisfies SxProps<Theme>;
 
 /**
- * One control plate. 48px tall upright, the smallest target a thumb hits reliably, and 40px wide, so eight plates, fullscreen included, share
- * one row at 412px rather than the last wrapping onto a row of its own.
+ * One control plate. 48px tall upright, the smallest target a thumb hits reliably, and 36px wide, so nine plates, Settings and fullscreen
+ * included, share one row at 412px. The label is 9px and closed up a little, so "Settings" fits inside the border.
  */
 const CONTROL_SX = {
 	flexDirection: "column",
-	width: 40,
+	width: 36,
 	height: 48,
-	p: 0.25,
+	px: 0,
+	py: 0.25,
 	color: "common.white",
 	border: "1px solid rgba(255, 255, 255, 0.53)",
 	bgcolor: "rgba(0, 0, 0, 0.35)",
 	borderRadius: "3px",
 	lineHeight: 1,
-	"& .reader-label": { fontSize: 10, lineHeight: 1.1, mt: 0.25 },
+	"& .reader-label": { fontSize: 9, lineHeight: 1.1, mt: 0.25, letterSpacing: "-0.02em", whiteSpace: "nowrap" },
 	"&.Mui-disabled": { opacity: 0.35 },
 	"&:hover": { borderColor: "common.white", bgcolor: "rgba(0, 0, 0, 0.6)" },
 	[LANDSCAPE]: { width: RAIL_WIDTH - 8, height: "auto", flex: "0 1 44px", minHeight: 34, "& .reader-label": { display: "none" }, "& .MuiSvgIcon-root": { fontSize: 20 } }
@@ -310,6 +326,9 @@ export interface StoryChoice {
 	onPick: () => void;
 }
 
+/** The root's inline style: the scene size as a custom property, so moving the slider never adds a new class. */
+type SceneSizeStyle = CSSProperties & { "--scene-size": number };
+
 /** Props for MobileStoryReader. */
 export interface MobileStoryReaderProps {
 	/** The site's scene, which fills a 16:9 box: background, sprites and effects, with no text or controls of its own. */
@@ -341,6 +360,13 @@ export interface MobileStoryReaderProps {
 	logTitle?: string;
 	/** Anything pinned under the Log's title, such as the reader's name field. Memoise it, or the open Log re-renders on every typed character. */
 	logHeader?: ReactNode;
+	/**
+	 * The reader's settings, usually a `StorySettingsPanel`. When set, a Settings plate joins fullscreen at the end of the controls and opens
+	 * them in a sheet over the reader.
+	 */
+	settings?: ReactNode;
+	/** How much of its full size the scene takes, 0.6 to 1, from the reader's settings. Defaults to 1. */
+	sceneSize?: number;
 	/** Draws the box's frame around its content, for a site with its own dialogue frame. Defaults to a plain panel. */
 	frame?: (content: ReactNode, kind: "line" | "choices") => ReactNode;
 	/** Where the stage sits on a phone on its side. Left puts the rail beside it and gives the text the rest. Defaults to left. */
@@ -514,8 +540,8 @@ const Transcript = memo(function Transcript({ lines }: { lines: readonly StoryLi
 /**
  * The shared phone reader for a story. Upright: the scene, the current line's box under it, the transcript newest first below that, and the
  * controls along the bottom. On its side: a thin rail of icons, the scene at full height, then the transcript and the box in the widest column, with
- * the navbar hidden. The site brings the scene, the lines and the controls. The reader lays them out, keeps the transcript and the Log, and adds
- * a fullscreen control at the end of the controls where the browser can go fullscreen.
+ * the navbar hidden. The site brings the scene, the lines and the controls. The reader lays them out and keeps the transcript and the Log. At
+ * the end of the controls it adds Settings, where the site gives a panel, and fullscreen, where the browser can go fullscreen.
  *
  * @param props Component props.
  * @returns The reader.
@@ -534,6 +560,8 @@ function MobileStoryReader({
 	onCloseLog,
 	logTitle = "Log",
 	logHeader,
+	settings,
+	sceneSize = 1,
 	frame = plainFrame,
 	landscapeAlign = "left",
 	landscapeAside,
@@ -542,29 +570,35 @@ function MobileStoryReader({
 }: MobileStoryReaderProps) {
 	const root = useRef<HTMLDivElement>(null);
 	const fullscreen = useFullscreen(root);
+	const [settingsOpen, setSettingsOpen] = useState(false);
+	const hasSettings = !!settings;
 	const hasCurrent = current !== null;
 	// The line in the box is the last one read, so the transcript leaves it out while it shows there.
 	const earlier = useMemo(() => (hasCurrent ? lines.slice(0, -1) : lines), [lines, hasCurrent]);
 	const align = ALIGN_SX[landscapeAlign];
 	const picking = !!choices?.length;
-	// The site's controls, then fullscreen as a group of its own, where the browser can go fullscreen. iPhone Safari cannot, so it has none.
-	const allControls = useMemo<readonly StoryControl[]>(
-		() =>
-			fullscreen.supported
-				? [
-						...controls,
-						{
-							key: "fullscreen",
-							label: fullscreen.active ? "Exit" : "Full",
-							ariaLabel: fullscreen.active ? "Leave fullscreen" : "Fill the screen",
-							icon: fullscreen.active ? <FullscreenExitIcon /> : <FullscreenIcon />,
-							onClick: fullscreen.toggle,
-							group: true
-						}
-					]
-				: controls,
-		[controls, fullscreen.supported, fullscreen.active, fullscreen.toggle]
-	);
+	const openSettings = useCallback(() => setSettingsOpen(true), []);
+	const closeSettings = useCallback(() => setSettingsOpen(false), []);
+	const rootStyle = useMemo<SceneSizeStyle>(() => ({ "--scene-size": sceneSize }), [sceneSize]);
+	// The site's controls, then Settings where the site gives a panel and fullscreen where the browser can go fullscreen, as a group of their
+	// own. iPhone Safari cannot go fullscreen, so it has no Full plate.
+	const allControls = useMemo<readonly StoryControl[]>(() => {
+		const tail: StoryControl[] = [];
+		if (hasSettings) {
+			tail.push({ key: "settings", label: "Settings", icon: <SettingsIcon />, onClick: openSettings, group: true });
+		}
+		if (fullscreen.supported) {
+			tail.push({
+				key: "fullscreen",
+				label: fullscreen.active ? "Exit" : "Full",
+				ariaLabel: fullscreen.active ? "Leave fullscreen" : "Fill the screen",
+				icon: fullscreen.active ? <FullscreenExitIcon /> : <FullscreenIcon />,
+				onClick: fullscreen.toggle,
+				group: !hasSettings
+			});
+		}
+		return tail.length > 0 ? [...controls, ...tail] : controls;
+	}, [controls, hasSettings, openSettings, fullscreen.supported, fullscreen.active, fullscreen.toggle]);
 
 	const content = picking ? (
 		<Box sx={CHOICES_SX}>
@@ -594,23 +628,28 @@ function MobileStoryReader({
 	);
 
 	return (
-		<Box ref={root} sx={[ROOT_SX, ...(Array.isArray(sx) ? sx : [sx ?? false])]} onClickCapture={onInteract} data-region="story-reader">
+		<Box ref={root} sx={[ROOT_SX, ...(Array.isArray(sx) ? sx : [sx ?? false])]} style={rootStyle} onClickCapture={onInteract} data-region="story-reader">
 			<HideNavbar query={MOBILE_LANDSCAPE_QUERY} />
 			<Box sx={STAGE_REGION_SX} onClick={onAdvance}>
-				<Box sx={STAGE_BOX_SX}>
+				<Box sx={STAGE_BOX_SX} data-region="reader-scene">
 					{scene}
 					{caption ? <Box sx={CAPTION_SX}>{caption}</Box> : null}
 				</Box>
 			</Box>
 			<ControlRail controls={allControls} alignSx={align.rail} />
 			{landscapeAlign === "center" && landscapeAside ? <Box sx={ASIDE_SX}>{landscapeAside}</Box> : null}
-			<Box sx={[TEXT_COLUMN_SX, align.text]}>
+			<Box sx={[TEXT_COLUMN_SX, align.text]} data-region="reader-text">
 				<Transcript lines={earlier} />
 				<Box sx={BOX_SX} onClick={picking ? undefined : onAdvance}>
 					{frame(content, picking ? "choices" : "line")}
 				</Box>
 			</Box>
 			{logOpen ? <StoryLogSheet title={logTitle} lines={lines} header={logHeader} onClose={onCloseLog} /> : null}
+			{settingsOpen && hasSettings ? (
+				<ReaderSheet title="Settings" onClose={closeSettings}>
+					{settings}
+				</ReaderSheet>
+			) : null}
 			{overlay}
 		</Box>
 	);
