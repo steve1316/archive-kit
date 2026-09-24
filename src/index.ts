@@ -77,5 +77,6 @@ export type { DomainColours } from "./theme/augmentation.js";
 // Hooks
 
 export { useArtPanBounds, useCloseOnEscape } from "./hooks/useArtViewer.js";
+export { MOBILE_LANDSCAPE_QUERY, MOBILE_QUERY, useIsMobile } from "./hooks/useMobileLayout.js";
 export { useZoomPan } from "./hooks/useZoomPan.js";
 export type { UseZoomPanOptions, UseZoomPanResult, ZoomPanTransform } from "./hooks/useZoomPan.js";
