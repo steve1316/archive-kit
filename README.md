@@ -45,6 +45,9 @@ updated whenever the pinned tag moves - the same install error is how you find o
 - **A navbar** that takes its search sources and destinations as props, and that a page can hide under a media query.
 - **A mobile story reader** - the shared phone layout for reading a story, upright or on its side. The site brings
   its scene, lines and controls. The reader lays them out and keeps the transcript, the Log and fullscreen.
+- **An animation stage** - the shared stage for a chibi animation, on desktop and phone. The site brings its runtime through a small
+  adapter (`StageRuntime`), and the stage owns zoom and its reset button, tap-to-step with a caption, loading and error messages, and a
+  frame loop that stops off screen.
 - **Hooks** for zoom and pan, an art viewer, fullscreen, the phone's media controls, and telling a phone from a desktop.
 - **Pure helpers** for name search and match spans, art layout, release-date formatting, and templated skill
   text.
@@ -91,7 +94,8 @@ without it the install fails with `ERR_PNPM_GIT_DEP_PREPARE_NOT_ALLOWED`.
 
 Anything that reads `import.meta.glob`, `import.meta.env`, an asset manifest, or a particular game's types.
 Those are compile-time or game-specific concerns and belong to each app. A Vite glob written inside a package
-resolves against the package's own folder once it is installed, so it cannot live here.
+resolves against the package's own folder once it is installed, so it cannot live here. Animation runtimes stay out too. Each game ships its own
+Spine or Live2D version, so `AnimationStage` takes the runtime as an adapter.
 
 This is enforced rather than merely intended: the package's own `tsconfig.json` sets `"types": []`, so both
 macros are type errors anywhere in `src/`. `tsconfig.base.json`, which is for apps, keeps `vite/client` and
