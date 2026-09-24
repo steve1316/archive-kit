@@ -1,37 +1,17 @@
-import { memo, useLayoutEffect, useRef } from "react";
+import { memo } from "react";
 import type { ReactNode } from "react";
 
-import { Box, IconButton, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
 
-import { useCloseOnEscape } from "../hooks/useArtViewer.js";
 import type { StoryLine } from "./MobileStoryReader.js";
+import ReaderSheet from "./ReaderSheet.js";
 
-/** The sheet's background, solid so the scene never bleeds through the text. */
-const SHEET_BG = "#08090d";
-
-/**
- * The sheet: the whole reader, above everything in it. Absolute rather than fixed, and never portalled, so it stays inside the reader when the
- * reader is fullscreen. Its lines are plain elements styled once here, since a long chapter holds hundreds of them.
- */
-const SHEET_SX = {
-	position: "absolute",
-	inset: 0,
-	zIndex: 20,
-	background: SHEET_BG,
-	overflowY: "auto",
-	overscrollBehavior: "contain",
-	px: 2,
-	pb: 2,
-	cursor: "default",
+/** The Log's lines: plain elements styled once here, since a long chapter holds hundreds of them. */
+const LOG_SX = {
 	"& .log-line": { mb: 1.25, fontSize: 14, lineHeight: 1.45 },
 	"& .log-speaker": { display: "block", fontSize: 12, color: "var(--reader-accent)" },
 	"& .log-choice": { color: "var(--reader-pick)" }
 } satisfies SxProps<Theme>;
-
-/** The pinned header: the title, the close button and whatever the site adds, such as a name field. */
-const HEADER_SX = { position: "sticky", top: 0, zIndex: 1, background: SHEET_BG, pt: 2, pb: 1.5, mb: 0.5 } satisfies SxProps<Theme>;
 
 /** Props for StoryLogSheet. */
 interface StoryLogSheetProps {
@@ -53,30 +33,8 @@ interface StoryLogSheetProps {
  * @returns The sheet.
  */
 function StoryLogSheet({ title, lines, header, onClose }: StoryLogSheetProps) {
-	const sheet = useRef<HTMLDivElement>(null);
-
-	// Open at the newest line, before the first paint, so the sheet never shows the top first.
-	useLayoutEffect(() => {
-		if (sheet.current) {
-			sheet.current.scrollTop = sheet.current.scrollHeight;
-		}
-	}, []);
-
-	useCloseOnEscape(onClose);
-
 	return (
-		<Box ref={sheet} sx={SHEET_SX} role="dialog" aria-label={title}>
-			<Box sx={HEADER_SX}>
-				<Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: header ? 1 : 0 }}>
-					<Typography component="h2" variant="h6" sx={{ flex: 1 }}>
-						{title}
-					</Typography>
-					<IconButton aria-label={`Close the ${title.toLowerCase()}`} onClick={onClose} size="small">
-						<CloseIcon />
-					</IconButton>
-				</Box>
-				{header}
-			</Box>
+		<ReaderSheet title={title} header={header} openAtEnd sx={LOG_SX} onClose={onClose}>
 			{lines.map((line, index) =>
 				line.kind === "choice" ? (
 					<div key={index} className="log-line log-choice">
@@ -90,7 +48,7 @@ function StoryLogSheet({ title, lines, header, onClose }: StoryLogSheetProps) {
 					</div>
 				)
 			)}
-		</Box>
+		</ReaderSheet>
 	);
 }
 
