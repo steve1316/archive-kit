@@ -61,7 +61,7 @@ const NOTE_SHOWN_SX = { ...NOTE_SX, maxWidth: "24em", opacity: 1, visibility: "v
 
 /** Props for StoryCorner. */
 export interface StoryCornerProps {
-	/** Where the reader is in the scene: the line on screen and how many lines the whole scene holds. Null leaves the count out. */
+	/** Where the reader is in the scene: the line on screen, 1 or more, and how many lines the whole scene holds. Null leaves the count out. */
 	progress: { at: number; total: number } | null;
 	/** The track that started, or null for none. A new object is a new play, even of the same track, and shows its title again. */
 	track: { title: string } | null;
@@ -134,7 +134,7 @@ function StoryCorner({ progress, track }: StoryCornerProps) {
 					{progress ? " \u00b7 " : ""}
 				</Box>
 			) : null}
-			{progress ? <span className="corner-progress">{`Line ${Math.max(1, progress.at)} of ${progress.total}`}</span> : null}
+			{progress ? <span className="corner-progress">{`Line ${progress.at} of ${progress.total}`}</span> : null}
 		</Box>
 	);
 }
