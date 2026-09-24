@@ -1,0 +1,585 @@
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "react";
+import type { MouseEvent, ReactNode, UIEvent } from "react";
+import { Link } from "react-router-dom";
+
+import { Box, ButtonBase, IconButton } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material";
+import { keyframes } from "@mui/material/styles";
+import FullscreenIcon from "@mui/icons-material/Fullscreen";
+import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
+
+import { useFullscreen } from "../hooks/useFullscreen.js";
+import { MOBILE_LANDSCAPE_QUERY } from "../hooks/useMobileLayout.js";
+import HideNavbar from "./HideNavbar.js";
+import StoryLogSheet from "./StoryLogSheet.js";
+
+// //////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////
+// Layout
+
+/** A phone on its side. Upright is the default, so every sideways rule sits under this key. */
+const LANDSCAPE = `@media ${MOBILE_LANDSCAPE_QUERY}`;
+
+/** The control rail's width on a phone on its side, in pixels. */
+const RAIL_WIDTH = 48;
+
+/** The narrowest the text column gets on a phone on its side, in pixels. The stage gives up width before the text does. */
+const MIN_TEXT_WIDTH = 240;
+
+/** How close to the transcript's bottom counts as reading the newest line, in pixels. */
+const PIN_SLACK_PX = 24;
+
+/** The Auto plate's icon turns while it runs. */
+const SPIN = keyframes`from { transform: rotate(0deg); } to { transform: rotate(360deg); }`;
+
+/**
+ * The reader: a column upright, a row on its side. It is the element that goes fullscreen, so it carries no transform or containment. Its two
+ * colours are CSS variables, so a site can set its own with one line of `sx`.
+ */
+const ROOT_SX = (theme: Theme) => ({
+	"--reader-accent": theme.palette.primary.main,
+	"--reader-pick": "#f0c36a",
+	position: "relative",
+	display: "flex",
+	flexDirection: "column",
+	width: "100%",
+	height: "100%",
+	minHeight: 0,
+	overflow: "hidden",
+	background: "#000",
+	color: "#eef0f4",
+	[LANDSCAPE]: { flexDirection: "row" }
+});
+
+/**
+ * The scene's region, which a tap reads on from. Upright it is the full width at 16:9. On its side it is the full height, as wide as 16:9 allows
+ * while the text column keeps its minimum, with the scene centred in it.
+ */
+const STAGE_REGION_SX = {
+	flex: "none",
+	width: "100%",
+	display: "flex",
+	alignItems: "center",
+	cursor: "pointer",
+	userSelect: "none",
+	touchAction: "manipulation",
+	WebkitTapHighlightColor: "transparent",
+	[LANDSCAPE]: { width: "auto", height: "100%", aspectRatio: "16 / 9", maxWidth: `calc(100% - ${RAIL_WIDTH + MIN_TEXT_WIDTH}px)` }
+} satisfies SxProps<Theme>;
+
+/** The scene's own 16:9 box, which the site's scene fills. */
+const STAGE_BOX_SX = { position: "relative", width: "100%", aspectRatio: "16 / 9", overflow: "hidden" } satisfies SxProps<Theme>;
+
+/** The fullscreen control: the bare icon in the scene's corner, outlined so it reads on a white scene. */
+const FULLSCREEN_SX = {
+	position: "absolute",
+	top: "2.5%",
+	left: "2%",
+	zIndex: 5,
+	width: 40,
+	height: 40,
+	color: "common.white",
+	// Four one-pixel shadows, which is an outline in all but name. A blurred shadow alone vanishes against snow.
+	filter: "drop-shadow(1px 0 0 rgba(0,0,0,0.85)) drop-shadow(-1px 0 0 rgba(0,0,0,0.85)) drop-shadow(0 1px 0 rgba(0,0,0,0.85)) drop-shadow(0 -1px 0 rgba(0,0,0,0.85))",
+	"&:hover": { bgcolor: "transparent" }
+} satisfies SxProps<Theme>;
+
+/** Where the scene stands, quietly, in its bottom right corner. */
+const CAPTION_SX = {
+	position: "absolute",
+	right: "1.3%",
+	bottom: "1.4%",
+	zIndex: 5,
+	px: 1,
+	py: 0.25,
+	borderRadius: "3px",
+	bgcolor: "rgba(0, 0, 0, 0.45)",
+	fontSize: 12,
+	color: "rgba(255, 255, 255, 0.85)",
+	pointerEvents: "none"
+} satisfies SxProps<Theme>;
+
+/** The controls: a wrapping row of labelled plates under the scene, or on its side a thin rail of bare icons. */
+const RAIL_SX = {
+	flex: "none",
+	display: "flex",
+	flexWrap: "wrap",
+	justifyContent: "center",
+	gap: 0.75,
+	px: 1,
+	py: 1,
+	bgcolor: "rgba(0, 0, 0, 0.35)",
+	borderTop: "1px solid",
+	borderBottom: "1px solid",
+	borderColor: "divider",
+	[LANDSCAPE]: {
+		flexDirection: "column",
+		flexWrap: "nowrap",
+		justifyContent: "flex-start",
+		alignItems: "center",
+		width: RAIL_WIDTH,
+		height: "100%",
+		overflowY: "auto",
+		gap: 0.5,
+		px: 0.5,
+		py: 0.75,
+		border: "none"
+	}
+} satisfies SxProps<Theme>;
+
+/** One control plate. 48px tall upright, the smallest target a thumb hits reliably. */
+const CONTROL_SX = {
+	flexDirection: "column",
+	width: 45,
+	height: 48,
+	p: 0.25,
+	color: "common.white",
+	border: "1px solid rgba(255, 255, 255, 0.53)",
+	bgcolor: "rgba(0, 0, 0, 0.35)",
+	borderRadius: "3px",
+	lineHeight: 1,
+	"& .reader-label": { fontSize: 10, lineHeight: 1.1, mt: 0.25 },
+	"&.Mui-disabled": { opacity: 0.35 },
+	"&:hover": { borderColor: "common.white", bgcolor: "rgba(0, 0, 0, 0.6)" },
+	[LANDSCAPE]: { width: RAIL_WIDTH - 8, height: "auto", flex: "0 1 44px", minHeight: 34, "& .reader-label": { display: "none" }, "& .MuiSvgIcon-root": { fontSize: 20 } }
+} satisfies SxProps<Theme>;
+
+/** A plate that starts a new group: a gap before it, so navigation and playback read as separate sets. */
+const GROUP_SX = { ml: 1, [LANDSCAPE]: { ml: 0, mt: 0.75 } } satisfies SxProps<Theme>;
+
+/** A control that stays on after it is pressed, such as Auto: a dashed edge in the accent colour. */
+const ACTIVE_SX = { borderStyle: "dashed", borderColor: "var(--reader-accent)", color: "var(--reader-accent)" } satisfies SxProps<Theme>;
+
+/** A control whose icon turns while it runs. */
+const SPIN_SX = { "& .MuiSvgIcon-root": { animation: `${SPIN} 2.4s linear infinite` } } satisfies SxProps<Theme>;
+
+/** The text column: the transcript over the current line's box. */
+const TEXT_COLUMN_SX = {
+	flex: 1,
+	minHeight: 0,
+	minWidth: 0,
+	display: "flex",
+	flexDirection: "column",
+	px: 1.5,
+	pt: 1,
+	pb: 1.5,
+	[LANDSCAPE]: { height: "100%", minWidth: MIN_TEXT_WIDTH, px: 1.25, py: 1 }
+} satisfies SxProps<Theme>;
+
+/** The transcript: every earlier line, the newest at the bottom, scrolling up to the first. Its top edge fades out. */
+const TRANSCRIPT_SX = {
+	flex: "1 1 auto",
+	minHeight: 0,
+	overflowY: "auto",
+	overscrollBehavior: "contain",
+	maskImage: "linear-gradient(to bottom, transparent 0, #000 1.4em)",
+	mb: 1
+} satisfies SxProps<Theme>;
+
+/**
+ * The transcript's lines, pushed to its bottom while there are too few to fill it. The lines are plain elements styled once here, since a long
+ * chapter holds hundreds of them and each would otherwise carry its own styles.
+ */
+const TRANSCRIPT_INNER_SX = {
+	minHeight: "100%",
+	display: "flex",
+	flexDirection: "column",
+	justifyContent: "flex-end",
+	"& .reader-line": { fontSize: 14, lineHeight: 1.55, color: "text.secondary", mb: 0.75 },
+	"& .reader-speaker": { fontWeight: 700, color: "text.primary" },
+	"& .reader-choice": { color: "var(--reader-pick)" },
+	[LANDSCAPE]: { "& .reader-line": { fontSize: 13, lineHeight: 1.5 } }
+} satisfies SxProps<Theme>;
+
+/** The current line's box, which a tap reads on from. Its height is capped, so a long line scrolls rather than squeezing out the transcript. */
+const BOX_SX = {
+	flex: "none",
+	maxHeight: "45%",
+	overflowY: "auto",
+	cursor: "pointer",
+	touchAction: "manipulation",
+	WebkitTapHighlightColor: "transparent",
+	[LANDSCAPE]: { maxHeight: "60%" }
+} satisfies SxProps<Theme>;
+
+/** The default frame around the box: a dark panel with an accent edge. A site can draw its own with `frame`. */
+const PANEL_SX = {
+	minHeight: 96,
+	background: "rgba(18, 21, 28, 0.96)",
+	border: "1px solid #2a303c",
+	borderLeft: "3px solid var(--reader-accent)",
+	borderRadius: 1,
+	p: "10px 14px",
+	[LANDSCAPE]: { minHeight: 80 }
+} satisfies SxProps<Theme>;
+
+/** The speaker's name. Its line is always there, so narration does not make the text jump up. */
+const SPEAKER_SX = { color: "var(--reader-accent)", fontWeight: 600, fontSize: 14, lineHeight: 1.45, minHeight: "1.45em" } satisfies SxProps<Theme>;
+
+/** The current line. */
+const TEXT_SX = { fontSize: 16, lineHeight: 1.5, [LANDSCAPE]: { fontSize: 14 } } satisfies SxProps<Theme>;
+
+/** The caret after a line that is still typing. */
+const CARET_SX = { opacity: 0.6, ml: "1px" } satisfies SxProps<Theme>;
+
+/** The choices, one full-width button each. */
+const CHOICES_SX = { display: "grid", gap: 1 } satisfies SxProps<Theme>;
+
+/** One choice. */
+const CHOICE_SX = {
+	justifyContent: "center",
+	color: "#fff",
+	border: "1px solid rgba(255, 255, 255, 0.6)",
+	bgcolor: "rgba(30, 30, 32, 0.92)",
+	fontSize: 15,
+	fontFamily: "inherit",
+	lineHeight: 1.4,
+	p: "10px 14px",
+	"&:hover": { bgcolor: "rgba(60, 60, 64, 0.95)" }
+} satisfies SxProps<Theme>;
+
+/** The letterbox beside a centred stage on a phone on its side, for whatever the site puts there. Hidden upright. */
+const ASIDE_SX = { display: "none", [LANDSCAPE]: { display: "block", order: -1, flex: 1, minWidth: 0, height: "100%", overflowY: "auto" } } satisfies SxProps<Theme>;
+
+/** Where the rail and the text column sit on a phone on its side, for each place the stage can take. */
+const ALIGN_SX = {
+	left: { rail: { [LANDSCAPE]: { order: -1, borderRight: "1px solid", borderColor: "divider" } }, text: { [LANDSCAPE]: { order: 1 } } },
+	right: { rail: { [LANDSCAPE]: { order: 2, borderLeft: "1px solid", borderColor: "divider" } }, text: { [LANDSCAPE]: { order: -1 } } },
+	center: { rail: { [LANDSCAPE]: { order: -2, borderRight: "1px solid", borderColor: "divider" } }, text: { [LANDSCAPE]: { order: 1 } } }
+} satisfies Record<"left" | "center" | "right", { rail: SxProps<Theme>; text: SxProps<Theme> }>;
+
+// //////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////
+// Types
+
+/** One control: a plate with a label upright, a bare icon on a phone on its side. */
+export interface StoryControl {
+	/** A stable key for the plate. */
+	key: string;
+	/** The plate's label, shown under the icon upright and read out as its name. */
+	label: string;
+	/** The plate's icon, such as an MUI icon element. */
+	icon: ReactNode;
+	/** Called when the plate is pressed. */
+	onClick?: () => void;
+	/** A route to open instead, such as the story list. */
+	to?: string;
+	/** A fuller name for screen readers, when the label alone is too terse. */
+	ariaLabel?: string;
+	/** Whether the control is on, such as Auto while it runs. */
+	active?: boolean;
+	/** Whether the icon turns while the control is on. */
+	spin?: boolean;
+	/** Whether the plate is disabled. */
+	disabled?: boolean;
+	/** Whether the plate starts a new group, which opens a gap before it. */
+	group?: boolean;
+}
+
+/** One line read so far, for the transcript and the Log. */
+export interface StoryLine {
+	/** The speaker's name, or null for narration. */
+	speaker: string | null;
+	/** The text, which may carry styled runs. */
+	text: ReactNode;
+	/** A line, or a choice the reader picked. Defaults to a line. */
+	kind?: "line" | "choice";
+}
+
+/** The line in the box. */
+export interface StoryCurrentLine {
+	/** The speaker's name, or null for narration. */
+	speaker: string | null;
+	/** The text typed so far, which may carry styled runs. */
+	text: ReactNode;
+	/** Whether the line is still typing, which shows a caret and holds a screen reader back until it is done. */
+	typing?: boolean;
+}
+
+/** One choice the reader can pick. */
+export interface StoryChoice {
+	/** A stable key for the choice. */
+	key: string;
+	/** What the choice says. */
+	label: ReactNode;
+	/** Called when the reader picks it. */
+	onPick: () => void;
+}
+
+/** Props for MobileStoryReader. */
+export interface MobileStoryReaderProps {
+	/** The site's scene, which fills a 16:9 box: background, sprites and effects, with no text or controls of its own. */
+	scene: ReactNode;
+	/** A short note in the scene's corner, such as the chapter and the music. */
+	caption?: ReactNode;
+	/** The controls, in order. Memoise the list, since the reader re-renders on every typed character. */
+	controls: readonly StoryControl[];
+	/**
+	 * Every line and choice read so far, oldest first. While `current` is set, the last entry must be that line: the transcript shows all but it,
+	 * and the Log shows all of it. Leave out anything not yet read.
+	 */
+	lines: readonly StoryLine[];
+	/** The line in the box, or null while choices or the end fill it. */
+	current: StoryCurrentLine | null;
+	/** The choices to pick from, which take the box's place. */
+	choices?: readonly StoryChoice[] | null;
+	/** What shows at the story's end, such as links to the next story, under the current line. */
+	end?: ReactNode;
+	/** Called when the reader taps the scene or the box to read on. */
+	onAdvance: () => void;
+	/** Called first on any tap in the reader, such as to let blocked sound start. */
+	onInteract?: () => void;
+	/** Whether the full Log is open. */
+	logOpen: boolean;
+	/** Called to close the Log. */
+	onCloseLog: () => void;
+	/** The Log's title. Defaults to "Log". */
+	logTitle?: string;
+	/** Anything pinned under the Log's title, such as the reader's name field. Memoise it, or the open Log re-renders on every typed character. */
+	logHeader?: ReactNode;
+	/** Draws the box's frame around its content, for a site with its own dialogue frame. Defaults to a plain panel. */
+	frame?: (content: ReactNode, kind: "line" | "choices") => ReactNode;
+	/** Where the stage sits on a phone on its side. Left puts the rail beside it and gives the text the rest. Defaults to left. */
+	landscapeAlign?: "left" | "center" | "right";
+	/** What fills the letterbox on the rail's side when the stage is centred. */
+	landscapeAside?: ReactNode;
+	/** Anything drawn over the whole reader, such as a site's own menu. Kept inside, so it shows in fullscreen too. */
+	overlay?: ReactNode;
+	/** Extra styles for the reader, such as the story font. The accent and the picked-choice colour are `--reader-accent` and `--reader-pick`. */
+	sx?: SxProps<Theme>;
+}
+
+// //////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////
+// Parts
+
+/**
+ * Keep a tap from reaching the scene or the box, which would read on.
+ *
+ * @param event The click.
+ */
+function stopTap(event: MouseEvent) {
+	event.stopPropagation();
+}
+
+/**
+ * The default frame: the box's content in a plain dark panel.
+ *
+ * @param content The box's content.
+ * @returns The framed content.
+ */
+function plainFrame(content: ReactNode): ReactNode {
+	return <Box sx={PANEL_SX}>{content}</Box>;
+}
+
+/** Props for ControlRail. */
+interface ControlRailProps {
+	/** The controls, in order. */
+	controls: readonly StoryControl[];
+	/** Where the rail sits on a phone on its side. */
+	alignSx: (typeof ALIGN_SX)[keyof typeof ALIGN_SX]["rail"];
+}
+
+/**
+ * The control plates. Memoised, so the typewriter's ticks leave it alone.
+ *
+ * @param props Component props.
+ * @returns The rail.
+ */
+const ControlRail = memo(function ControlRail({ controls, alignSx }: ControlRailProps) {
+	return (
+		<Box sx={[RAIL_SX, alignSx]} role="toolbar" aria-label="Story controls">
+			{controls.map((control) => {
+				const sx = [CONTROL_SX, !!control.group && GROUP_SX, !!control.active && ACTIVE_SX, !!(control.active && control.spin) && SPIN_SX];
+				const content = (
+					<>
+						{control.icon}
+						<span className="reader-label">{control.label}</span>
+					</>
+				);
+				return control.to ? (
+					<ButtonBase key={control.key} component={Link} to={control.to} sx={sx} aria-label={control.ariaLabel ?? control.label} title={control.label}>
+						{content}
+					</ButtonBase>
+				) : (
+					<ButtonBase
+						key={control.key}
+						sx={sx}
+						onClick={control.onClick}
+						disabled={control.disabled}
+						aria-label={control.ariaLabel ?? control.label}
+						aria-pressed={control.active}
+						title={control.label}
+					>
+						{content}
+					</ButtonBase>
+				);
+			})}
+		</Box>
+	);
+});
+
+/**
+ * Every line before the one in the box, newest at the bottom. It keeps to the bottom as lines arrive while the reader is there, and stays put
+ * while they scroll back through earlier lines. Memoised, so the typewriter's ticks leave it alone.
+ *
+ * @param props Component props.
+ * @param props.lines The lines to show, oldest first.
+ * @returns The transcript.
+ */
+const Transcript = memo(function Transcript({ lines }: { lines: readonly StoryLine[] }) {
+	const scroller = useRef<HTMLDivElement>(null);
+	// Whether the reader is at the newest line, so new lines and a turned phone keep them there.
+	const pinned = useRef(true);
+
+	useLayoutEffect(() => {
+		const element = scroller.current;
+		if (element && pinned.current) {
+			element.scrollTop = element.scrollHeight;
+		}
+	}, [lines]);
+
+	useEffect(() => {
+		const element = scroller.current;
+		if (!element) {
+			return;
+		}
+		const observer = new ResizeObserver(() => {
+			if (pinned.current) {
+				element.scrollTop = element.scrollHeight;
+			}
+		});
+		observer.observe(element);
+		return () => observer.disconnect();
+	}, []);
+
+	const onScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
+		const element = event.currentTarget;
+		pinned.current = element.scrollHeight - element.scrollTop - element.clientHeight < PIN_SLACK_PX;
+	}, []);
+
+	return (
+		<Box ref={scroller} sx={TRANSCRIPT_SX} onScroll={onScroll}>
+			<Box sx={TRANSCRIPT_INNER_SX}>
+				{lines.map((line, index) =>
+					line.kind === "choice" ? (
+						<div key={index} className="reader-line reader-choice">
+							{"> "}
+							{line.text}
+						</div>
+					) : (
+						<div key={index} className="reader-line">
+							{line.speaker ? <span className="reader-speaker">{line.speaker}: </span> : null}
+							{line.text}
+						</div>
+					)
+				)}
+			</Box>
+		</Box>
+	);
+});
+
+// //////////////////////////////////////////////////////////////////////////////////////////////////
+// //////////////////////////////////////////////////////////////////////////////////////////////////
+// Reader
+
+/**
+ * The shared phone reader for a story. Upright: the scene with only a fullscreen icon on it, the controls under it, then the transcript and the
+ * current line's box. On its side: a thin rail of icons, the scene at full height, then the transcript and the box in the widest column, with the
+ * navbar hidden. The site brings the scene, the lines and the controls. The reader lays them out, keeps the transcript and the Log, and handles
+ * fullscreen.
+ *
+ * @param props Component props.
+ * @returns The reader.
+ */
+function MobileStoryReader({
+	scene,
+	caption,
+	controls,
+	lines,
+	current,
+	choices,
+	end,
+	onAdvance,
+	onInteract,
+	logOpen,
+	onCloseLog,
+	logTitle = "Log",
+	logHeader,
+	frame = plainFrame,
+	landscapeAlign = "left",
+	landscapeAside,
+	overlay,
+	sx
+}: MobileStoryReaderProps) {
+	const root = useRef<HTMLDivElement>(null);
+	const fullscreen = useFullscreen(root);
+	const hasCurrent = current !== null;
+	// The line in the box is the last one read, so the transcript leaves it out while it shows there.
+	const earlier = useMemo(() => (hasCurrent ? lines.slice(0, -1) : lines), [lines, hasCurrent]);
+	const align = ALIGN_SX[landscapeAlign];
+	const picking = !!choices?.length;
+
+	const content = picking ? (
+		<Box sx={CHOICES_SX}>
+			{choices.map((choice) => (
+				<ButtonBase key={choice.key} sx={CHOICE_SX} onClick={choice.onPick}>
+					{choice.label}
+				</ButtonBase>
+			))}
+		</Box>
+	) : (
+		<>
+			{current ? (
+				<>
+					<Box sx={SPEAKER_SX}>{current.speaker ?? ""}</Box>
+					<Box sx={TEXT_SX} aria-live="polite" aria-busy={current.typing}>
+						{current.text}
+						{current.typing ? (
+							<Box component="span" sx={CARET_SX}>
+								|
+							</Box>
+						) : null}
+					</Box>
+				</>
+			) : null}
+			{end ? <Box onClick={stopTap}>{end}</Box> : null}
+		</>
+	);
+
+	return (
+		<Box ref={root} sx={[ROOT_SX, ...(Array.isArray(sx) ? sx : [sx ?? false])]} onClickCapture={onInteract} data-region="story-reader">
+			<HideNavbar query={MOBILE_LANDSCAPE_QUERY} />
+			<Box sx={STAGE_REGION_SX} onClick={onAdvance}>
+				<Box sx={STAGE_BOX_SX}>
+					{scene}
+					{caption ? <Box sx={CAPTION_SX}>{caption}</Box> : null}
+					{fullscreen.supported ? (
+						<IconButton
+							sx={FULLSCREEN_SX}
+							aria-label={fullscreen.active ? "Leave fullscreen" : "Fill the screen"}
+							onClick={(event) => {
+								stopTap(event);
+								fullscreen.toggle();
+							}}
+						>
+							{fullscreen.active ? <FullscreenExitIcon /> : <FullscreenIcon />}
+						</IconButton>
+					) : null}
+				</Box>
+			</Box>
+			<ControlRail controls={controls} alignSx={align.rail} />
+			{landscapeAlign === "center" && landscapeAside ? <Box sx={ASIDE_SX}>{landscapeAside}</Box> : null}
+			<Box sx={[TEXT_COLUMN_SX, align.text]}>
+				<Transcript lines={earlier} />
+				<Box sx={BOX_SX} onClick={picking ? undefined : onAdvance}>
+					{frame(content, picking ? "choices" : "line")}
+				</Box>
+			</Box>
+			{logOpen ? <StoryLogSheet title={logTitle} lines={lines} header={logHeader} onClose={onCloseLog} /> : null}
+			{overlay}
+		</Box>
+	);
+}
+
+export default MobileStoryReader;

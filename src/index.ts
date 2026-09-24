@@ -27,6 +27,8 @@ export { default as IndexSummaryBar } from "./components/IndexSummaryBar.js";
 export { default as LazySection } from "./components/LazySection.js";
 export { default as LevelSlider } from "./components/LevelSlider.js";
 export { default as LoadError } from "./components/LoadError.js";
+export { default as MobileStoryReader } from "./components/MobileStoryReader.js";
+export type { MobileStoryReaderProps, StoryChoice, StoryControl, StoryCurrentLine, StoryLine } from "./components/MobileStoryReader.js";
 export { default as PageBackdrop } from "./components/PageBackdrop.js";
 export { default as RankBar } from "./components/RankBar.js";
 export { default as ScrollToTop } from "./components/ScrollToTop.js";
