@@ -222,6 +222,12 @@ const PANEL_SX = {
 	[LANDSCAPE]: { minHeight: 80 }
 } satisfies SxProps<Theme>;
 
+/**
+ * The default frame around the choices: the same panel, with the choices centred in it rather than hanging from its top. The left padding gives
+ * back the accent edge's extra 2px, so the choices sit centred across the whole panel.
+ */
+const CHOICES_PANEL_SX = { ...PANEL_SX, display: "flex", flexDirection: "column", justifyContent: "center", pl: "12px" } satisfies SxProps<Theme>;
+
 /** The speaker's name. Its line is always there, so narration does not make the text jump up. */
 const SPEAKER_SX = { color: "var(--reader-accent)", fontWeight: 600, fontSize: 14, lineHeight: 1.45, minHeight: "1.45em" } satisfies SxProps<Theme>;
 
@@ -372,13 +378,14 @@ function stopTap(event: MouseEvent) {
 }
 
 /**
- * The default frame: the box's content in a plain dark panel.
+ * The default frame: the box's content in a plain dark panel, with choices centred in it.
  *
  * @param content The box's content.
+ * @param kind Whether the box holds a line or choices.
  * @returns The framed content.
  */
-function plainFrame(content: ReactNode): ReactNode {
-	return <Box sx={PANEL_SX}>{content}</Box>;
+function plainFrame(content: ReactNode, kind: "line" | "choices"): ReactNode {
+	return <Box sx={kind === "choices" ? CHOICES_PANEL_SX : PANEL_SX}>{content}</Box>;
 }
 
 /** Props for ControlRail. */
