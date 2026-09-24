@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 
 import { Box, IconButton, Typography } from "@mui/material";
@@ -6,6 +6,7 @@ import type { SxProps, Theme } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 
 import { useCloseOnEscape } from "../hooks/useArtViewer.js";
+import { useCloseOnOutsidePress } from "../hooks/useCloseOnOutsidePress.js";
 
 /** The card: a small dark panel over the player, placed by the site's `sx`. It scrolls rather than running off a short player. */
 const CARD_SX = {
@@ -53,6 +54,15 @@ function stopClick(event: ReactMouseEvent) {
 }
 
 /**
+ * Whether a click outside the card is spent on closing it alone: always, the way a menu's is, so closing it never also reads on.
+ *
+ * @returns True.
+ */
+function swallowAll(): boolean {
+	return true;
+}
+
+/**
  * The open card. It holds the listeners, so they exist only while the card shows.
  *
  * @param props Component props.
@@ -60,42 +70,11 @@ function stopClick(event: ReactMouseEvent) {
  */
 function OpenCard({ onClose, sx, children }: Omit<StorySettingsCardProps, "open">) {
 	const card = useRef<HTMLDivElement>(null);
-	// Read through a ref, so a new `onClose` on a re-render does not reset a press that is still going on.
-	const close = useRef(onClose);
-	useEffect(() => {
-		close.current = onClose;
-	}, [onClose]);
 
 	// Taken before the page's own keys, so closing the card does not also run a page shortcut bound to Escape.
 	useCloseOnEscape(onClose, true);
-
-	// A click outside is spent here, the way a menu's is, so it never also reads on. It closes the card, unless the press began inside, such as
-	// a slider drag released outside, which leaves the card open.
-	useEffect(() => {
-		let pressedInside = false;
-		const inside = (target: EventTarget | null) => target instanceof Node && card.current?.contains(target) === true;
-		const onDown = (event: PointerEvent) => {
-			pressedInside = inside(event.target);
-		};
-		const onClick = (event: MouseEvent) => {
-			const began = pressedInside;
-			pressedInside = false;
-			if (inside(event.target)) {
-				return;
-			}
-			event.stopPropagation();
-			event.preventDefault();
-			if (!began) {
-				close.current();
-			}
-		};
-		window.addEventListener("pointerdown", onDown, true);
-		window.addEventListener("click", onClick, true);
-		return () => {
-			window.removeEventListener("pointerdown", onDown, true);
-			window.removeEventListener("click", onClick, true);
-		};
-	}, []);
+	// A click outside closes the card and is spent there, unless the press began inside, such as a slider drag released outside.
+	useCloseOnOutsidePress(card, onClose, swallowAll);
 
 	return (
 		<Box ref={card} sx={[CARD_SX, ...(Array.isArray(sx) ? sx : [sx ?? false])]} onClick={stopClick} role="dialog" aria-label="Settings">
