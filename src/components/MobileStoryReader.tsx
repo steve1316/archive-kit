@@ -459,6 +459,14 @@ const Transcript = memo(function Transcript({ lines }: { lines: readonly StoryLi
 	// Whether the reader is at the newest line, so new lines and a turned phone keep them there.
 	const pinned = useRef(true);
 
+	// The two orientations run the lines in opposite directions, so a scroll position means nothing after a turn. Go back to the newest line.
+	useLayoutEffect(() => {
+		pinned.current = true;
+		if (scroller.current) {
+			toNewest(scroller.current, sideways);
+		}
+	}, [sideways]);
+
 	useLayoutEffect(() => {
 		const element = scroller.current;
 		if (element && pinned.current) {
