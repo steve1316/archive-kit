@@ -131,7 +131,8 @@ function StoryCorner({ progress, track }: StoryCornerProps) {
 				<Box component="span" className="corner-note" sx={shown ? NOTE_SHOWN_SX : NOTE_SX} aria-hidden={!shown}>
 					{"\u266a "}
 					<span className="corner-title">{title}</span>
-					{progress ? " \u00b7 " : ""}
+					{/* A plain space at the end of the note would be dropped, since the note is its own box. */}
+					{progress ? " -\u00a0" : ""}
 				</Box>
 			) : null}
 			{progress ? <span className="corner-progress">{`Line ${progress.at} of ${progress.total}`}</span> : null}
