@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "
 import type { MouseEvent, ReactNode, UIEvent } from "react";
 import { Link } from "react-router-dom";
 
-import { Box, ButtonBase, IconButton } from "@mui/material";
+import { Box, ButtonBase, IconButton, useMediaQuery } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
 import { keyframes } from "@mui/material/styles";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
@@ -99,18 +99,22 @@ const CAPTION_SX = {
 	pointerEvents: "none"
 } satisfies SxProps<Theme>;
 
-/** The controls: a wrapping row of labelled plates under the scene, or on its side a thin rail of bare icons. */
+/**
+ * The controls: upright, a wrapping row of labelled plates along the bottom, clear of a phone's gesture bar. On its side, a thin rail of bare
+ * icons, which `ALIGN_SX` places.
+ */
 const RAIL_SX = {
+	order: 2,
 	flex: "none",
 	display: "flex",
 	flexWrap: "wrap",
 	justifyContent: "center",
 	gap: 0.75,
 	px: 1,
-	py: 1,
+	pt: 1,
+	pb: "calc(8px + env(safe-area-inset-bottom))",
 	bgcolor: "rgba(0, 0, 0, 0.35)",
 	borderTop: "1px solid",
-	borderBottom: "1px solid",
 	borderColor: "divider",
 	[LANDSCAPE]: {
 		flexDirection: "column",
@@ -153,42 +157,47 @@ const ACTIVE_SX = { borderStyle: "dashed", borderColor: "var(--reader-accent)", 
 /** A control whose icon turns while it runs. */
 const SPIN_SX = { "& .MuiSvgIcon-root": { animation: `${SPIN} 2.4s linear infinite` } } satisfies SxProps<Theme>;
 
-/** The text column: the transcript over the current line's box. */
+/** The text column. Upright, the current line's box sits under the scene with the transcript below it. On its side, the transcript is over the box. */
 const TEXT_COLUMN_SX = {
+	order: 1,
 	flex: 1,
 	minHeight: 0,
 	minWidth: 0,
 	display: "flex",
-	flexDirection: "column",
+	flexDirection: "column-reverse",
+	gap: 1,
 	px: 1.5,
-	pt: 1,
-	pb: 1.5,
-	[LANDSCAPE]: { height: "100%", minWidth: MIN_TEXT_WIDTH, px: 1.25, py: 1 }
+	py: 1,
+	[LANDSCAPE]: { flexDirection: "column", height: "100%", minWidth: MIN_TEXT_WIDTH, px: 1.25, py: 1 }
 } satisfies SxProps<Theme>;
 
-/** The transcript: every earlier line, the newest at the bottom, scrolling up to the first. Its top edge fades out. */
+/**
+ * The transcript: every earlier line. Upright the newest sits at the top, just under the box, and older lines run down to a fade. On its side
+ * the newest sits at the bottom, just over the box, and older lines run up to a fade. Upright, the browser's scroll anchoring keeps a reader who
+ * has scrolled back on the line they are reading as new lines land above it.
+ */
 const TRANSCRIPT_SX = {
 	flex: "1 1 auto",
 	minHeight: 0,
 	overflowY: "auto",
 	overscrollBehavior: "contain",
-	maskImage: "linear-gradient(to bottom, transparent 0, #000 1.4em)",
-	mb: 1
+	maskImage: "linear-gradient(to top, transparent 0, #000 1.4em)",
+	[LANDSCAPE]: { maskImage: "linear-gradient(to bottom, transparent 0, #000 1.4em)" }
 } satisfies SxProps<Theme>;
 
 /**
- * The transcript's lines, pushed to its bottom while there are too few to fill it. The lines are plain elements styled once here, since a long
- * chapter holds hundreds of them and each would otherwise carry its own styles.
+ * The transcript's lines: newest first upright, pushed to the bottom on its side while there are too few to fill it. The lines are plain elements
+ * styled once here, since a long chapter holds hundreds of them and each would otherwise carry its own styles.
  */
 const TRANSCRIPT_INNER_SX = {
 	minHeight: "100%",
 	display: "flex",
-	flexDirection: "column",
+	flexDirection: "column-reverse",
 	justifyContent: "flex-end",
 	"& .reader-line": { fontSize: 14, lineHeight: 1.55, color: "text.secondary", mb: 0.75 },
 	"& .reader-speaker": { fontWeight: 700, color: "text.primary" },
 	"& .reader-choice": { color: "var(--reader-pick)" },
-	[LANDSCAPE]: { "& .reader-line": { fontSize: 13, lineHeight: 1.5 } }
+	[LANDSCAPE]: { flexDirection: "column", "& .reader-line": { fontSize: 13, lineHeight: 1.5 } }
 } satisfies SxProps<Theme>;
 
 /** The current line's box, which a tap reads on from. Its height is capped, so a long line scrolls rather than squeezing out the transcript. */
@@ -420,8 +429,18 @@ const ControlRail = memo(function ControlRail({ controls, alignSx }: ControlRail
 });
 
 /**
- * Every line before the one in the box, newest at the bottom. It keeps to the bottom as lines arrive while the reader is there, and stays put
- * while they scroll back through earlier lines. Memoised, so the typewriter's ticks leave it alone.
+ * Scroll the transcript to its newest line: the top upright, the bottom on its side.
+ *
+ * @param element The transcript's scroller.
+ * @param sideways Whether the phone is on its side.
+ */
+function toNewest(element: HTMLElement, sideways: boolean) {
+	element.scrollTop = sideways ? element.scrollHeight : 0;
+}
+
+/**
+ * Every line before the one in the box, newest first upright and newest last on its side. It keeps to the newest line as lines arrive while the
+ * reader is there, and stays put while they scroll back through earlier lines. Memoised, so the typewriter's ticks leave it alone.
  *
  * @param props Component props.
  * @param props.lines The lines to show, oldest first.
@@ -429,15 +448,16 @@ const ControlRail = memo(function ControlRail({ controls, alignSx }: ControlRail
  */
 const Transcript = memo(function Transcript({ lines }: { lines: readonly StoryLine[] }) {
 	const scroller = useRef<HTMLDivElement>(null);
+	const sideways = useMediaQuery(MOBILE_LANDSCAPE_QUERY, { noSsr: true });
 	// Whether the reader is at the newest line, so new lines and a turned phone keep them there.
 	const pinned = useRef(true);
 
 	useLayoutEffect(() => {
 		const element = scroller.current;
 		if (element && pinned.current) {
-			element.scrollTop = element.scrollHeight;
+			toNewest(element, sideways);
 		}
-	}, [lines]);
+	}, [lines, sideways]);
 
 	useEffect(() => {
 		const element = scroller.current;
@@ -446,17 +466,21 @@ const Transcript = memo(function Transcript({ lines }: { lines: readonly StoryLi
 		}
 		const observer = new ResizeObserver(() => {
 			if (pinned.current) {
-				element.scrollTop = element.scrollHeight;
+				toNewest(element, sideways);
 			}
 		});
 		observer.observe(element);
 		return () => observer.disconnect();
-	}, []);
+	}, [sideways]);
 
-	const onScroll = useCallback((event: UIEvent<HTMLDivElement>) => {
-		const element = event.currentTarget;
-		pinned.current = element.scrollHeight - element.scrollTop - element.clientHeight < PIN_SLACK_PX;
-	}, []);
+	const onScroll = useCallback(
+		(event: UIEvent<HTMLDivElement>) => {
+			const element = event.currentTarget;
+			const fromNewest = sideways ? element.scrollHeight - element.scrollTop - element.clientHeight : element.scrollTop;
+			pinned.current = fromNewest < PIN_SLACK_PX;
+		},
+		[sideways]
+	);
 
 	return (
 		<Box ref={scroller} sx={TRANSCRIPT_SX} onScroll={onScroll}>
@@ -484,9 +508,9 @@ const Transcript = memo(function Transcript({ lines }: { lines: readonly StoryLi
 // Reader
 
 /**
- * The shared phone reader for a story. Upright: the scene with only a fullscreen icon on it, the controls under it, then the transcript and the
- * current line's box. On its side: a thin rail of icons, the scene at full height, then the transcript and the box in the widest column, with the
- * navbar hidden. The site brings the scene, the lines and the controls. The reader lays them out, keeps the transcript and the Log, and handles
+ * The shared phone reader for a story. Upright: the scene with only a fullscreen icon on it, the current line's box under it, the transcript
+ * newest first below that, and the controls along the bottom. On its side: a thin rail of icons, the scene at full height, then the transcript and
+ * the box in the widest column, with the navbar hidden. The site brings the scene, the lines and the controls. The reader lays them out, keeps the transcript and the Log, and handles
  * fullscreen.
  *
  * @param props Component props.
