@@ -117,10 +117,13 @@ const RAIL_SX = {
 	}
 } satisfies SxProps<Theme>;
 
-/** One control plate. 48px tall upright, the smallest target a thumb hits reliably. */
+/**
+ * One control plate. 48px tall upright, the smallest target a thumb hits reliably, and 40px wide, so eight plates, fullscreen included, share
+ * one row at 412px rather than the last wrapping onto a row of its own.
+ */
 const CONTROL_SX = {
 	flexDirection: "column",
-	width: 45,
+	width: 40,
 	height: 48,
 	p: 0.25,
 	color: "common.white",
