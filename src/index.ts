@@ -12,6 +12,8 @@ import "./theme/augmentation.js";
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // Components
 
+export { default as AnimationStage } from "./components/AnimationStage.js";
+export type { AnimationStageProps, StageEntry, StageMessageKind, StageRuntime } from "./components/AnimationStage.js";
 export { default as ArchiveNavbar } from "./components/ArchiveNavbar.js";
 export type { NavItem, SearchOption } from "./components/ArchiveNavbar.js";
 export { default as ArtPlaceholder } from "./components/ArtPlaceholder.js";
