@@ -44,10 +44,15 @@ updated whenever the pinned tag moves - the same install error is how you find o
   placeholder and zoom controls, a page backdrop, a level slider, a star-rank picker and a rank bar.
 - **A navbar** that takes its search sources and destinations as props, and that a page can hide under a media query.
 - **A mobile story reader** - the shared phone layout for reading a story, upright or on its side. The site brings
-  its scene, lines and controls. The reader lays them out and keeps the transcript, the Log, a Settings sheet and fullscreen.
-- **Story settings** - the reader's text speed, BGM and SFX volumes and phone scene size, saved per site
+  its scene, lines and controls. The reader lays them out and keeps the transcript, the Log, a Settings sheet, the scene's
+  corner and fullscreen.
+- **Story settings** - the reader's text speed, BGM and SFX volumes, phone scene size, AUTO and mute, saved per site
   (`useStorySettings`). A panel of sliders shows them (`StorySettingsPanel`), and a small card holds the panel on a desktop
   player (`StorySettingsCard`).
+- **Shared story pieces** for a desktop player and the phone reader alike: the scene's corner with the line count and Now
+  Playing (`StoryCorner`), the end of a scene (`StoryEndCard`), a desktop Log drawn inside the player (`StoryLogPanel`), the
+  story keys and their guards (`useStoryKeys`), a gate that holds sound the browser refused until the next click
+  (`useAudioGate`), and a close-on-outside-press hook (`useCloseOnOutsidePress`).
 - **An animation stage** - the shared stage for a chibi animation, on desktop and phone. The site brings its runtime through a small
   adapter (`StageRuntime`), and the stage owns zoom and its reset button, tap-to-step with a caption, loading and error messages, and a
   frame loop that stops off screen.
@@ -103,6 +108,17 @@ Spine or Live2D version, so `AnimationStage` takes the runtime as an adapter.
 This is enforced rather than merely intended: the package's own `tsconfig.json` sets `"types": []`, so both
 macros are type errors anywhere in `src/`. `tsconfig.base.json`, which is for apps, keeps `vite/client` and
 so allows them.
+
+## Changes
+
+### 0.7.0
+
+- **Breaking:** `MobileStoryReader` no longer takes `caption`. Pass `corner={{ progress, track }}` instead, which draws a
+  `StoryCorner` in the scene's bottom right.
+- `StoryLine.kind` gains `"track"`, and the reader gains `onPanelChange`. `useStorySettings` also keeps `auto` and `muted`,
+  and `initial` now fills any field that is not saved yet.
+- New: `StoryCorner`, `StoryEndCard`, `StoryLogPanel`, `useStoryKeys` with `isControlTarget` and `isTextTarget`,
+  `useAudioGate` and `useCloseOnOutsidePress`.
 
 ## Licence
 
