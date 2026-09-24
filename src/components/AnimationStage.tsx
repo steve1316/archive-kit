@@ -42,11 +42,11 @@ const RESET_SX: Record<"left" | "right", SxProps<Theme>> = {
 	right: { position: "absolute", right: 8, bottom: 8, opacity: 0.9 }
 };
 
-/** The caption under the stage, naming the playing animation. */
-const CAPTION_SX = { flex: "none", mt: 0.875, textAlign: "center" } satisfies SxProps<Theme>;
+/** The caption under the stage, naming the playing animation. A flex column, so the caption line is its own height rather than the body's. */
+const CAPTION_SX = { flex: "none", mt: 0.875, textAlign: "center", display: "flex", flexDirection: "column" } satisfies SxProps<Theme>;
 
 /** The caption while nothing plays: hidden, but still holding its height, so the stage does not jump when an animation loads. */
-const CAPTION_HIDDEN_SX = { flex: "none", mt: 0.875, textAlign: "center", visibility: "hidden" } satisfies SxProps<Theme>;
+const CAPTION_HIDDEN_SX = { flex: "none", mt: 0.875, textAlign: "center", display: "flex", flexDirection: "column", visibility: "hidden" } satisfies SxProps<Theme>;
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////////////////////////////////////
