@@ -125,6 +125,7 @@ const SettingSlider = memo(function SettingSlider({ label, value, range, format,
 				min={range.min}
 				max={range.max}
 				step={range.step}
+				shiftStep={range.step * 2}
 				marks={marks}
 				onChange={handleChange}
 				sx={SLIDER_SX}
