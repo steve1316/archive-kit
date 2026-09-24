@@ -19,9 +19,25 @@ export interface AudioGate {
 }
 
 /**
+ * Start every held sound that is still paused and has not ended, and empty the list. A sound refused again is held again by `start`.
+ *
+ * @param held The held sounds.
+ * @param start Starts one sound.
+ */
+function releaseHeld(held: Set<HTMLMediaElement>, start: (audio: HTMLMediaElement) => void) {
+	const ready = [...held];
+	held.clear();
+	for (const audio of ready) {
+		if (audio.paused && !audio.ended) {
+			start(audio);
+		}
+	}
+}
+
+/**
  * A gate for a story's sound. A browser may refuse to play before the reader has clicked, which it reports as a `NotAllowedError`. The gate
  * notes that as `blocked`, keeps the looping sounds and any started with `keep` waiting, and plays them on the reader's next click through
- * `resume`. A one-shot is dropped rather than kept, since it would be stale by the time it could play.
+ * `resume`, or as soon as any sound plays. A one-shot is dropped rather than kept, since it would be stale by the time it could play.
  *
  * @returns The gate.
  */
@@ -43,6 +59,8 @@ export function useAudioGate(): AudioGate {
 			() => {
 				waiting.current.delete(audio);
 				setBlocked(false);
+				// Sound is allowed now, so the held sounds start too, as a click would start them.
+				releaseHeld(waiting.current, (held) => void play(held, { keep: true }));
 				return true;
 			},
 			(error: unknown) => {
@@ -65,13 +83,7 @@ export function useAudioGate(): AudioGate {
 	const resume = useCallback(() => {
 		// The reader's click lets sound play from here on. Anything refused again sets `blocked` back.
 		setBlocked(false);
-		const ready = [...waiting.current];
-		waiting.current.clear();
-		for (const audio of ready) {
-			if (audio.paused && !audio.ended) {
-				void play(audio, { keep: true });
-			}
-		}
+		releaseHeld(waiting.current, (audio) => void play(audio, { keep: true }));
 	}, [play]);
 
 	return useMemo(() => ({ blocked, play, resume, forget }), [blocked, play, resume, forget]);
