@@ -66,7 +66,7 @@ export interface UseZoomPanResult<T extends HTMLElement = HTMLElement> {
 	reset: () => void;
 	/** Whether the content is currently scaled past `minScale`. */
 	isZoomed: boolean;
-	/** Whether the gesture that just ended moved the content, so the click it produces should not count as a click. */
+	/** Whether the gesture that just ended was a drag or a pinch, even one with nothing to move, so the click it produces should not count as a click. */
 	wasDragged: () => boolean;
 }
 
@@ -225,13 +225,17 @@ export function useZoomPan<T extends HTMLElement = HTMLElement>(options: UseZoom
 				return;
 			}
 
-			// One pointer is a drag. Without pan limits that is only meaningful once there is overflow to move.
+			// One pointer is a drag. It counts as one past the threshold even with nothing to move, so the click it ends in is not taken as a tap.
 			const origin = dragStart.current;
-			if (!origin || (!panBoundsRef.current && transformRef.current.scale <= minScale)) {
+			if (!origin) {
 				return;
 			}
 			if (Math.hypot(event.clientX - origin.x, event.clientY - origin.y) > DRAG_THRESHOLD) {
 				moved.current = true;
+			}
+			// Without pan limits, moving the content is only meaningful once there is overflow to move.
+			if (!panBoundsRef.current && transformRef.current.scale <= minScale) {
+				return;
 			}
 			setTransform((current) => limitPan({ ...current, x: origin.originX + (event.clientX - origin.x), y: origin.originY + (event.clientY - origin.y) }));
 		};
