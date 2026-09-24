@@ -44,7 +44,10 @@ updated whenever the pinned tag moves - the same install error is how you find o
   placeholder and zoom controls, a page backdrop, a level slider, a star-rank picker and a rank bar.
 - **A navbar** that takes its search sources and destinations as props, and that a page can hide under a media query.
 - **A mobile story reader** - the shared phone layout for reading a story, upright or on its side. The site brings
-  its scene, lines and controls. The reader lays them out and keeps the transcript, the Log and fullscreen.
+  its scene, lines and controls. The reader lays them out and keeps the transcript, the Log, a Settings sheet and fullscreen.
+- **Story settings** - the reader's text speed, BGM and SFX volumes and phone scene size, saved per site
+  (`useStorySettings`). A panel of sliders shows them (`StorySettingsPanel`), and a small card holds the panel on a desktop
+  player (`StorySettingsCard`).
 - **An animation stage** - the shared stage for a chibi animation, on desktop and phone. The site brings its runtime through a small
   adapter (`StageRuntime`), and the stage owns zoom and its reset button, tap-to-step with a caption, loading and error messages, and a
   frame loop that stops off screen.
