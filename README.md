@@ -119,6 +119,7 @@ so allows them.
   and `initial` now fills any field that is not saved yet.
 - New: `StoryCorner`, `StoryEndCard`, `StoryLogPanel`, `useStoryKeys` with `isControlTarget` and `isTextTarget`,
   `useAudioGate` and `useCloseOnOutsidePress`.
+- New: `STORY_END_Z`, the stage end's layer, so a site control can sit above the end's black at `STORY_END_Z + 1`.
 
 ## Licence
 

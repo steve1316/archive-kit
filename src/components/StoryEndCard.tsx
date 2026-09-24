@@ -19,6 +19,9 @@ export const STORY_END_Z = 3;
 /** A fade in from nothing. */
 const FADE_IN = keyframes`from { opacity: 0; } to { opacity: 1; }`;
 
+/** The card's fade in. Hidden until it starts, so its buttons take no click or focus while the scene is still going to black. */
+const CARD_IN = keyframes`from { opacity: 0; visibility: hidden; } to { opacity: 1; visibility: visible; }`;
+
 /**
  * The black the scene fades to at its end. The phone reader lays it over its own scene too. It takes no clicks, so the scene's own handlers still get theirs.
  */
@@ -36,7 +39,7 @@ const CARD_SX = {
 	width: "min(420px, 80%)",
 	textAlign: "center",
 	color: "#eef0f4",
-	animation: `${FADE_IN} ${CARD_S}s ease-out ${BLACK_S}s both`
+	animation: `${CARD_IN} ${CARD_S}s ease-out ${BLACK_S}s both`
 } satisfies SxProps<Theme>;
 
 /** "End of story" on the stage, sized against it. */
