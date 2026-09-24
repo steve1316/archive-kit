@@ -2,7 +2,7 @@ import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef } from "
 import type { MouseEvent, ReactNode, UIEvent } from "react";
 import { Link } from "react-router-dom";
 
-import { Box, ButtonBase, IconButton, useMediaQuery } from "@mui/material";
+import { Box, ButtonBase, useMediaQuery } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
 import { keyframes } from "@mui/material/styles";
 import FullscreenIcon from "@mui/icons-material/Fullscreen";
@@ -69,20 +69,6 @@ const STAGE_REGION_SX = {
 
 /** The scene's own 16:9 box, which the site's scene fills. */
 const STAGE_BOX_SX = { position: "relative", width: "100%", aspectRatio: "16 / 9", overflow: "hidden" } satisfies SxProps<Theme>;
-
-/** The fullscreen control: the bare icon in the scene's corner, outlined so it reads on a white scene. */
-const FULLSCREEN_SX = {
-	position: "absolute",
-	top: "2.5%",
-	left: "2%",
-	zIndex: 5,
-	width: 40,
-	height: 40,
-	color: "common.white",
-	// Four one-pixel shadows, which is an outline in all but name. A blurred shadow alone vanishes against snow.
-	filter: "drop-shadow(1px 0 0 rgba(0,0,0,0.85)) drop-shadow(-1px 0 0 rgba(0,0,0,0.85)) drop-shadow(0 1px 0 rgba(0,0,0,0.85)) drop-shadow(0 -1px 0 rgba(0,0,0,0.85))",
-	"&:hover": { bgcolor: "transparent" }
-} satisfies SxProps<Theme>;
 
 /** Where the scene stands, quietly, in its bottom right corner. */
 const CAPTION_SX = {
@@ -523,10 +509,10 @@ const Transcript = memo(function Transcript({ lines }: { lines: readonly StoryLi
 // Reader
 
 /**
- * The shared phone reader for a story. Upright: the scene with only a fullscreen icon on it, the current line's box under it, the transcript
- * newest first below that, and the controls along the bottom. On its side: a thin rail of icons, the scene at full height, then the transcript and
- * the box in the widest column, with the navbar hidden. The site brings the scene, the lines and the controls. The reader lays them out, keeps the transcript and the Log, and handles
- * fullscreen.
+ * The shared phone reader for a story. Upright: the scene, the current line's box under it, the transcript newest first below that, and the
+ * controls along the bottom. On its side: a thin rail of icons, the scene at full height, then the transcript and the box in the widest column, with
+ * the navbar hidden. The site brings the scene, the lines and the controls. The reader lays them out, keeps the transcript and the Log, and adds
+ * a fullscreen control at the end of the controls where the browser can go fullscreen.
  *
  * @param props Component props.
  * @returns The reader.
@@ -558,6 +544,24 @@ function MobileStoryReader({
 	const earlier = useMemo(() => (hasCurrent ? lines.slice(0, -1) : lines), [lines, hasCurrent]);
 	const align = ALIGN_SX[landscapeAlign];
 	const picking = !!choices?.length;
+	// The site's controls, then fullscreen as a group of its own, where the browser can go fullscreen. iPhone Safari cannot, so it has none.
+	const allControls = useMemo<readonly StoryControl[]>(
+		() =>
+			fullscreen.supported
+				? [
+						...controls,
+						{
+							key: "fullscreen",
+							label: fullscreen.active ? "Exit" : "Full",
+							ariaLabel: fullscreen.active ? "Leave fullscreen" : "Fill the screen",
+							icon: fullscreen.active ? <FullscreenExitIcon /> : <FullscreenIcon />,
+							onClick: fullscreen.toggle,
+							group: true
+						}
+					]
+				: controls,
+		[controls, fullscreen.supported, fullscreen.active, fullscreen.toggle]
+	);
 
 	const content = picking ? (
 		<Box sx={CHOICES_SX}>
@@ -593,21 +597,9 @@ function MobileStoryReader({
 				<Box sx={STAGE_BOX_SX}>
 					{scene}
 					{caption ? <Box sx={CAPTION_SX}>{caption}</Box> : null}
-					{fullscreen.supported ? (
-						<IconButton
-							sx={FULLSCREEN_SX}
-							aria-label={fullscreen.active ? "Leave fullscreen" : "Fill the screen"}
-							onClick={(event) => {
-								stopTap(event);
-								fullscreen.toggle();
-							}}
-						>
-							{fullscreen.active ? <FullscreenExitIcon /> : <FullscreenIcon />}
-						</IconButton>
-					) : null}
 				</Box>
 			</Box>
-			<ControlRail controls={controls} alignSx={align.rail} />
+			<ControlRail controls={allControls} alignSx={align.rail} />
 			{landscapeAlign === "center" && landscapeAside ? <Box sx={ASIDE_SX}>{landscapeAside}</Box> : null}
 			<Box sx={[TEXT_COLUMN_SX, align.text]}>
 				<Transcript lines={earlier} />
