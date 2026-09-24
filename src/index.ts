@@ -34,6 +34,7 @@ export { default as RankBar } from "./components/RankBar.js";
 export { default as ScrollToTop } from "./components/ScrollToTop.js";
 export { default as ScrollToTopOnNavigate } from "./components/ScrollToTopOnNavigate.js";
 export { default as StarRankPicker } from "./components/StarRankPicker.js";
+export { default as StorySkipIcon } from "./components/StorySkipIcon.js";
 
 // `FilterRows` ships three named parts rather than a default, since a filter panel composes them.
 export { ChipRow, ChipRowDivider, RarityChipRow } from "./components/FilterRows.js";
