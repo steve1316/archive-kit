@@ -1,6 +1,6 @@
 {
 	"name": "archive-kit",
-	"version": "0.4.1",
+	"version": "0.5.0",
 	"description": "The shared front-end framework behind a family of static game-archive sites.",
 	"license": "GPL-3.0-or-later",
 	"repository": {
