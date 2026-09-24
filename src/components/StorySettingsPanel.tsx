@@ -5,7 +5,7 @@ import { Box, Slider, Typography } from "@mui/material";
 import type { SxProps, Theme } from "@mui/material";
 
 import { STORY_SETTING_RANGES } from "../hooks/useStorySettings.js";
-import type { StorySettingRange, StorySettings, StorySettingsState } from "../hooks/useStorySettings.js";
+import type { StorySettingRange, StorySettingsState, StorySliderKey } from "../hooks/useStorySettings.js";
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -38,7 +38,7 @@ const ROWS: readonly SettingRow[] = [
 /** One slider in the panel. */
 interface SettingRow {
 	/** The setting it changes. */
-	key: keyof StorySettings;
+	key: StorySliderKey;
 	/** The label over it. */
 	label: string;
 	/** Turns a value into the readout beside the label. */
