@@ -13,6 +13,9 @@ const BLACK_S = 1.2;
 /** How long the card takes to fade in once the scene is black, in seconds. */
 const CARD_S = 0.5;
 
+/** The stage end's layer. A site control that must stay above the end's black goes at `STORY_END_Z + 1` or higher. */
+export const STORY_END_Z = 3;
+
 /** A fade in from nothing. */
 const FADE_IN = keyframes`from { opacity: 0; } to { opacity: 1; }`;
 
@@ -22,7 +25,7 @@ const FADE_IN = keyframes`from { opacity: 0; } to { opacity: 1; }`;
 export const END_BLACK_SX = { position: "absolute", inset: 0, zIndex: 4, bgcolor: "#000", pointerEvents: "none", animation: `${FADE_IN} ${BLACK_S}s ease-out both` } satisfies SxProps<Theme>;
 
 /** The end over a desktop stage: the whole stage, under the site's own controls, which stay usable over the black. */
-const STAGE_SX = { position: "absolute", inset: 0, zIndex: 3, display: "grid", placeItems: "center", cursor: "default" } satisfies SxProps<Theme>;
+const STAGE_SX = { position: "absolute", inset: 0, zIndex: STORY_END_Z, display: "grid", placeItems: "center", cursor: "default" } satisfies SxProps<Theme>;
 
 /** The card, centred on the black, fading in once the scene has gone. */
 const CARD_SX = {

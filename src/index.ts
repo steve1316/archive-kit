@@ -38,7 +38,7 @@ export { default as ScrollToTopOnNavigate } from "./components/ScrollToTopOnNavi
 export { default as StarRankPicker } from "./components/StarRankPicker.js";
 export { default as StoryCorner } from "./components/StoryCorner.js";
 export type { StoryCornerProps } from "./components/StoryCorner.js";
-export { default as StoryEndCard } from "./components/StoryEndCard.js";
+export { default as StoryEndCard, STORY_END_Z } from "./components/StoryEndCard.js";
 export type { StoryEndCardProps, StoryEndLink } from "./components/StoryEndCard.js";
 export { default as StoryLogPanel } from "./components/StoryLogPanel.js";
 export type { StoryLogPanelProps } from "./components/StoryLogPanel.js";
