@@ -21,6 +21,7 @@ export type { CardGridSize } from "./components/CardGrid.js";
 export { default as ErrorBoundary } from "./components/ErrorBoundary.js";
 export { default as FilterChip } from "./components/FilterChip.js";
 export { default as FilterPanel } from "./components/FilterPanel.js";
+export { default as HideNavbar, NAVBAR_ATTRIBUTE } from "./components/HideNavbar.js";
 export { default as HighlightedName } from "./components/HighlightedName.js";
 export { default as IndexSummaryBar } from "./components/IndexSummaryBar.js";
 export { default as LazySection } from "./components/LazySection.js";

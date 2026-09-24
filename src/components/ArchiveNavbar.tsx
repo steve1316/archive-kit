@@ -343,7 +343,8 @@ export default function ArchiveNavbar({ title, navItems, searchOptions, homeLink
 
 	return (
 		<Box component="div" sx={styles.root}>
-			<AppBar position="fixed">
+			{/* Marked so `HideNavbar` can take the bar away, such as for a story reader on a phone on its side. */}
+			<AppBar position="fixed" data-archive-navbar="">
 				<Toolbar>
 					{isNarrow && searchOpen ? (
 						<>
@@ -377,8 +378,9 @@ export default function ArchiveNavbar({ title, navItems, searchOptions, homeLink
 				</Toolbar>
 			</AppBar>
 
-			{/* Takes its height from the bar itself, so a page never has to guess a top margin against a bar that is 56, 64 or 48px. */}
-			<Toolbar />
+			{/* Takes its height from the bar itself, so a page never has to guess a top margin against a bar that is 56, 64 or 48px. Marked like the
+			    bar, so `HideNavbar` takes both away together. */}
+			<Toolbar data-archive-navbar="" />
 
 			<Drawer style={{ width: "200px" }} anchor="left" open={drawerOpen} onClose={handleDrawerToggle} variant="temporary" slotProps={{ paper: { sx: styles.drawerPaper } }}>
 				<NavList navItems={navItems} onNavigate={closeDrawer} />
