@@ -88,5 +88,7 @@ export type { FullscreenState } from "./hooks/useFullscreen.js";
 export { useMediaSession } from "./hooks/useMediaSession.js";
 export type { MediaSessionInfo } from "./hooks/useMediaSession.js";
 export { MOBILE_LANDSCAPE_QUERY, MOBILE_QUERY, useIsMobile } from "./hooks/useMobileLayout.js";
+export { useStorySettings } from "./hooks/useStorySettings.js";
+export type { StorySettingRange, StorySettings, StorySettingsState } from "./hooks/useStorySettings.js";
 export { useZoomPan } from "./hooks/useZoomPan.js";
 export type { UseZoomPanOptions, UseZoomPanResult, ZoomPanTransform } from "./hooks/useZoomPan.js";
