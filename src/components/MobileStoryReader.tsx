@@ -13,6 +13,8 @@ import { useFullscreen } from "../hooks/useFullscreen.js";
 import { MOBILE_LANDSCAPE_QUERY } from "../hooks/useMobileLayout.js";
 import HideNavbar from "./HideNavbar.js";
 import ReaderSheet from "./ReaderSheet.js";
+import StoryCorner from "./StoryCorner.js";
+import type { StoryCornerProps } from "./StoryCorner.js";
 import StoryLogSheet from "./StoryLogSheet.js";
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,28 +78,17 @@ const STAGE_REGION_SX = {
 	}
 } satisfies SxProps<Theme>;
 
-/** The scene's own 16:9 box, which the site's scene fills. Upright it takes the reader's scene size of the width. */
+/**
+ * The scene's own 16:9 box, which the site's scene fills. Upright it takes the reader's scene size of the width. It is a size container, so
+ * the corner's text is measured against the scene.
+ */
 const STAGE_BOX_SX = {
 	position: "relative",
 	width: "calc(100% * var(--scene-size, 1))",
 	aspectRatio: "16 / 9",
 	overflow: "hidden",
+	containerType: "size",
 	[LANDSCAPE]: { width: "100%" }
-} satisfies SxProps<Theme>;
-
-/** Where the scene stands, quietly, in its bottom right corner. */
-const CAPTION_SX = {
-	position: "absolute",
-	right: "1.3%",
-	bottom: "1.4%",
-	zIndex: 5,
-	px: 1,
-	py: 0.25,
-	borderRadius: "3px",
-	bgcolor: "rgba(0, 0, 0, 0.45)",
-	fontSize: 12,
-	color: "rgba(255, 255, 255, 0.85)",
-	pointerEvents: "none"
 } satisfies SxProps<Theme>;
 
 /**
@@ -202,6 +193,7 @@ const TRANSCRIPT_INNER_SX = {
 	"& .reader-line": { fontSize: 14, lineHeight: 1.55, color: "text.secondary", mb: 0.75 },
 	"& .reader-speaker": { fontWeight: 700, color: "text.primary" },
 	"& .reader-choice": { color: "var(--reader-pick)" },
+	"& .reader-track": { fontStyle: "italic", opacity: 0.8 },
 	[LANDSCAPE]: { flexDirection: "column", "& .reader-line": { fontSize: 13, lineHeight: 1.5 } }
 } satisfies SxProps<Theme>;
 
@@ -300,10 +292,10 @@ export interface StoryControl {
 export interface StoryLine {
 	/** The speaker's name, or null for narration. */
 	speaker: string | null;
-	/** The text, which may carry styled runs. */
+	/** The text, which may carry styled runs. For a track, its title. */
 	text: ReactNode;
-	/** A line, or a choice the reader picked. Defaults to a line. */
-	kind?: "line" | "choice";
+	/** A line, a choice the reader picked, or a track that started. Defaults to a line. */
+	kind?: "line" | "choice" | "track";
 }
 
 /** The line in the box. */
@@ -333,8 +325,8 @@ type SceneSizeStyle = CSSProperties & { "--scene-size": number };
 export interface MobileStoryReaderProps {
 	/** The site's scene, which fills a 16:9 box: background, sprites and effects, with no text or controls of its own. */
 	scene: ReactNode;
-	/** A short note in the scene's corner, such as the chapter and the music. */
-	caption?: ReactNode;
+	/** The scene's corner: the line count, and a track's title as it starts. Left out, the corner stays empty. */
+	corner?: StoryCornerProps;
 	/** The controls, in order. Memoise the list, since the reader re-renders on every typed character. */
 	controls: readonly StoryControl[];
 	/**
@@ -363,6 +355,8 @@ export interface MobileStoryReaderProps {
 	 * them in a sheet over the reader.
 	 */
 	settings?: ReactNode;
+	/** Called with true when the Settings sheet opens and false when it closes, so the site can pause its keys and AUTO behind it. */
+	onPanelChange?: (open: boolean) => void;
 	/** How much of its full size the scene takes, 0.6 to 1, from the reader's settings. Defaults to 1. */
 	sceneSize?: number;
 	/** Draws the box's frame around its content, for a site with its own dialogue frame. Defaults to a plain panel. */
@@ -519,6 +513,11 @@ const Transcript = memo(function Transcript({ lines }: { lines: readonly StoryLi
 							{"> "}
 							{line.text}
 						</div>
+					) : line.kind === "track" ? (
+						<div key={index} className="reader-line reader-track">
+							{"\u266a Now Playing: "}
+							{line.text}
+						</div>
 					) : (
 						<div key={index} className="reader-line">
 							{line.speaker ? <span className="reader-speaker">{line.speaker}: </span> : null}
@@ -546,7 +545,7 @@ const Transcript = memo(function Transcript({ lines }: { lines: readonly StoryLi
  */
 function MobileStoryReader({
 	scene,
-	caption,
+	corner,
 	controls,
 	lines,
 	current,
@@ -558,6 +557,7 @@ function MobileStoryReader({
 	onCloseLog,
 	logTitle = "Log",
 	settings,
+	onPanelChange,
 	sceneSize = 1,
 	frame = plainFrame,
 	landscapeAlign = "left",
@@ -576,6 +576,19 @@ function MobileStoryReader({
 	const picking = !!choices?.length;
 	const openSettings = useCallback(() => setSettingsOpen(true), []);
 	const closeSettings = useCallback(() => setSettingsOpen(false), []);
+	// The site hears when the Settings sheet covers the story, so its keys and AUTO can wait. A reader that goes away with the sheet open says
+	// it closed.
+	const panelChange = useRef(onPanelChange);
+	useEffect(() => {
+		panelChange.current = onPanelChange;
+	}, [onPanelChange]);
+	useEffect(() => {
+		if (!settingsOpen) {
+			return;
+		}
+		panelChange.current?.(true);
+		return () => panelChange.current?.(false);
+	}, [settingsOpen]);
 	const rootStyle = useMemo<SceneSizeStyle>(() => ({ "--scene-size": sceneSize }), [sceneSize]);
 	// The site's controls, then Settings where the site gives a panel and fullscreen where the browser can go fullscreen, as a group of their
 	// own. iPhone Safari cannot go fullscreen, so it has no Full plate.
@@ -630,7 +643,7 @@ function MobileStoryReader({
 			<Box sx={STAGE_REGION_SX} onClick={onAdvance}>
 				<Box sx={STAGE_BOX_SX} data-region="reader-scene">
 					{scene}
-					{caption ? <Box sx={CAPTION_SX}>{caption}</Box> : null}
+					{corner ? <StoryCorner progress={corner.progress} track={corner.track} /> : null}
 				</Box>
 			</Box>
 			<ControlRail controls={allControls} alignSx={align.rail} />
