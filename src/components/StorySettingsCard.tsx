@@ -17,6 +17,8 @@ const CARD_SX = {
 	maxWidth: "calc(100vw - 32px)",
 	maxHeight: "min(440px, 85vh)",
 	overflowY: "auto",
+	// Never sideways. A slider thumb at the far end carries an invisible touch circle 1px past the edge, which put a scrollbar under the card.
+	overflowX: "hidden",
 	p: "6px 14px 14px",
 	background: "rgba(12, 14, 19, 0.97)",
 	border: "1px solid rgba(255, 255, 255, 0.18)",

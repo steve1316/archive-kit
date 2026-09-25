@@ -115,6 +115,7 @@ so allows them.
 
 - New: `fillBelowNavbar`, a size that fills the screen under the navbar at every breakpoint. It moved in from ak-archive, so both
   archives size their pages the same way.
+- The desktop Settings card no longer shows a sideways scrollbar when a slider sits at its far end.
 
 ### 0.7.0
 
