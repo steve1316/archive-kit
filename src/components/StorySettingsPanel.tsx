@@ -26,6 +26,7 @@ const SLIDER_SX = { display: "block", width: "auto", mx: 0.75 } satisfies SxProp
 /** The sliders, in the order they show. The scene size is the phone reader's alone. */
 const ROWS: readonly SettingRow[] = [
 	{ key: "speed", label: "Text speed", format: formatSpeed, setter: (settings) => settings.setSpeed },
+	{ key: "textSize", label: "Text size", format: formatShare, setter: (settings) => settings.setTextSize },
 	{ key: "bgm", label: "BGM volume", format: formatShare, setter: (settings) => settings.setBgm },
 	{ key: "sfx", label: "SFX volume", format: formatShare, setter: (settings) => settings.setSfx },
 	{ key: "sceneSize", label: "Scene size", format: formatShare, setter: (settings) => settings.setSceneSize }
@@ -86,9 +87,9 @@ function formatSpeed(value: number): string {
 }
 
 /**
- * A share as a percentage, such as "80%".
+ * A share or a size as a percentage, such as "80%".
  *
- * @param value The share, 0 to 1.
+ * @param value The value, where 1 is 100%.
  * @returns The readout.
  */
 function formatShare(value: number): string {
@@ -134,7 +135,7 @@ const SettingSlider = memo(function SettingSlider({ label, value, range, format,
 });
 
 /**
- * The reader's story settings as sliders: text speed, BGM and SFX volume, and on a phone the scene's size, then whatever the site adds. It
+ * The reader's story settings as sliders: text speed and size, BGM and SFX volume, and on a phone the scene's size, then whatever the site adds. It
  * has no title or close button, since the sheet or card around it supplies those.
  *
  * @param props Component props.

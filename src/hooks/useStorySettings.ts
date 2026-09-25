@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 /** The settings a slider sets, each a number with a range. */
-export type StorySliderKey = "speed" | "bgm" | "sfx" | "sceneSize";
+export type StorySliderKey = "speed" | "textSize" | "bgm" | "sfx" | "sceneSize";
 
 /** The settings that are on or off, each with its own control on the player rather than a slider. */
 type StoryFlagKey = "auto" | "muted";
@@ -9,6 +9,7 @@ type StoryFlagKey = "auto" | "muted";
 /** Each slider setting's range, step and normal value. The normal values are how each site read before settings existed. */
 export const STORY_SETTING_RANGES = {
 	speed: { min: 0.25, max: 2, step: 0.25, normal: 1 },
+	textSize: { min: 0.8, max: 1.5, step: 0.1, normal: 1 },
 	bgm: { min: 0, max: 1, step: 0.05, normal: 1 },
 	sfx: { min: 0, max: 1, step: 0.05, normal: 1 },
 	sceneSize: { min: 0.6, max: 1, step: 0.1, normal: 1 }
@@ -18,6 +19,8 @@ export const STORY_SETTING_RANGES = {
 export interface StorySettings {
 	/** Text speed multiplier, 0.25 to 2. 1 is the site's own normal speed. */
 	speed: number;
+	/** Size of the line in the text box, 0.8 to 1.5. 1 is the site's own size. The speaker's name keeps its size. */
+	textSize: number;
 	/** Music volume, 0 to 1. Multiplies the site's own music balance, so 1 sounds as it did before settings existed. */
 	bgm: number;
 	/** Sound effect volume, 0 to 1. Multiplies the site's own effect balance. */
@@ -34,6 +37,8 @@ export interface StorySettings {
 export interface StorySettingsState extends StorySettings {
 	/** Sets the text speed. Every slider setter clamps the value to its range and snaps it to its step. */
 	setSpeed: (value: number) => void;
+	/** Sets the size of the line in the text box. */
+	setTextSize: (value: number) => void;
 	/** Sets the music volume. */
 	setBgm: (value: number) => void;
 	/** Sets the sound effect volume. */
@@ -106,6 +111,7 @@ function loadSettings(storageKey: string, initial: Partial<StorySettings> | unde
 	const from = (key: keyof StorySettings): unknown => (stored[key] !== undefined ? stored[key] : initial?.[key]);
 	return {
 		speed: normaliseSetting("speed", from("speed")),
+		textSize: normaliseSetting("textSize", from("textSize")),
 		bgm: normaliseSetting("bgm", from("bgm")),
 		sfx: normaliseSetting("sfx", from("sfx")),
 		sceneSize: normaliseSetting("sceneSize", from("sceneSize")),
@@ -151,11 +157,12 @@ export function useStorySettings(storageKey: string, initial?: Partial<StorySett
 		});
 	}, []);
 	const setSpeed = useCallback((value: number) => update("speed", value), [update]);
+	const setTextSize = useCallback((value: number) => update("textSize", value), [update]);
 	const setBgm = useCallback((value: number) => update("bgm", value), [update]);
 	const setSfx = useCallback((value: number) => update("sfx", value), [update]);
 	const setSceneSize = useCallback((value: number) => update("sceneSize", value), [update]);
 	const setAuto = useCallback((value: boolean) => setFlag("auto", value), [setFlag]);
 	const setMuted = useCallback((value: boolean) => setFlag("muted", value), [setFlag]);
 
-	return useMemo(() => ({ ...settings, setSpeed, setBgm, setSfx, setSceneSize, setAuto, setMuted }), [settings, setSpeed, setBgm, setSfx, setSceneSize, setAuto, setMuted]);
+	return useMemo(() => ({ ...settings, setSpeed, setTextSize, setBgm, setSfx, setSceneSize, setAuto, setMuted }), [settings, setSpeed, setTextSize, setBgm, setSfx, setSceneSize, setAuto, setMuted]);
 }

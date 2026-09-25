@@ -46,7 +46,7 @@ updated whenever the pinned tag moves - the same install error is how you find o
 - **A mobile story reader** - the shared phone layout for reading a story, upright or on its side. The site brings
   its scene, lines and controls. The reader lays them out and keeps the transcript, the Log, a Settings sheet, the scene's
   corner and fullscreen.
-- **Story settings** - the reader's text speed, BGM and SFX volumes, phone scene size, AUTO and mute, saved per site
+- **Story settings** - the reader's text speed and size, BGM and SFX volumes, phone scene size, AUTO and mute, saved per site
   (`useStorySettings`). A panel of sliders shows them (`StorySettingsPanel`), and a small card holds the panel on a desktop
   player (`StorySettingsCard`).
 - **Shared story pieces** for a desktop player and the phone reader alike: the scene's corner with the line count and Now
@@ -115,6 +115,8 @@ so allows them.
 
 - New: `fillBelowNavbar`, a size that fills the screen under the navbar at every breakpoint. It moved in from ak-archive, so both
   archives size their pages the same way.
+- New: a Text size setting (`textSize`, 80% to 150%) with its slider. It scales only the line in the text box, never the
+  speaker's name. `MobileStoryReader` takes it as `textSize`, and a desktop player applies it to its own text box.
 - The desktop Settings card no longer shows a sideways scrollbar when a slider sits at its far end.
 
 ### 0.7.0
