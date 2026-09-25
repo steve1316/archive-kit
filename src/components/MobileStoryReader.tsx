@@ -198,15 +198,18 @@ const TRANSCRIPT_INNER_SX = {
 	[LANDSCAPE]: { flexDirection: "column", "& .reader-line": { fontSize: 13, lineHeight: 1.5 } }
 } satisfies SxProps<Theme>;
 
-/** The current line's box, which a tap reads on from. Its height is capped, so a long line scrolls rather than squeezing out the transcript. */
+/**
+ * The current line's box, which a tap reads on from. Its height is capped, so a long line scrolls rather than squeezing out the transcript. The
+ * cap grows with the text size, so the box holds as much of a line at any size.
+ */
 const BOX_SX = {
 	flex: "none",
-	maxHeight: "45%",
+	maxHeight: "calc(45% * var(--text-size, 1))",
 	overflowY: "auto",
 	cursor: "pointer",
 	touchAction: "manipulation",
 	WebkitTapHighlightColor: "transparent",
-	[LANDSCAPE]: { maxHeight: "60%" }
+	[LANDSCAPE]: { maxHeight: "calc(60% * var(--text-size, 1))" }
 } satisfies SxProps<Theme>;
 
 /** The default frame around the box: a dark panel with an accent edge. A site can draw its own with `frame`. */
@@ -229,8 +232,8 @@ const CHOICES_PANEL_SX = { ...PANEL_SX, display: "flex", flexDirection: "column"
 /** The speaker's name. Its line is always there, so narration does not make the text jump up. */
 const SPEAKER_SX = { color: "var(--reader-accent)", fontWeight: 600, fontSize: 14, lineHeight: 1.45, minHeight: "1.45em" } satisfies SxProps<Theme>;
 
-/** The current line. */
-const TEXT_SX = { fontSize: 16, lineHeight: 1.5, [LANDSCAPE]: { fontSize: 14 } } satisfies SxProps<Theme>;
+/** The current line, scaled by the reader's text size. The speaker's name above it keeps its size. */
+const TEXT_SX = { fontSize: "calc(16px * var(--text-size, 1))", lineHeight: 1.5, [LANDSCAPE]: { fontSize: "calc(14px * var(--text-size, 1))" } } satisfies SxProps<Theme>;
 
 /** The caret after a line that is still typing. */
 const CARET_SX = { opacity: 0.6, ml: "1px" } satisfies SxProps<Theme>;
@@ -319,8 +322,8 @@ export interface StoryChoice {
 	onPick: () => void;
 }
 
-/** The root's inline style: the scene size as a custom property, so moving the slider never adds a new class. */
-type SceneSizeStyle = CSSProperties & { "--scene-size": number };
+/** The root's inline style: the scene and text sizes as custom properties, so moving a slider never adds a new class. */
+type ReaderSizeStyle = CSSProperties & { "--scene-size": number; "--text-size": number };
 
 /** Props for MobileStoryReader. */
 export interface MobileStoryReaderProps {
@@ -360,6 +363,8 @@ export interface MobileStoryReaderProps {
 	onPanelChange?: (open: boolean) => void;
 	/** How much of its full size the scene takes, 0.6 to 1, from the reader's settings. Defaults to 1. */
 	sceneSize?: number;
+	/** The size of the line in the box, 0.8 to 1.5, from the reader's settings. Defaults to 1. The speaker's name and the transcript keep theirs. */
+	textSize?: number;
 	/** Draws the box's frame around its content, for a site with its own dialogue frame. Defaults to a plain panel. */
 	frame?: (content: ReactNode, kind: "line" | "choices") => ReactNode;
 	/** Where the stage sits on a phone on its side. Left puts the rail beside it and gives the text the rest. Defaults to left. */
@@ -541,6 +546,7 @@ function MobileStoryReader({
 	settings,
 	onPanelChange,
 	sceneSize = 1,
+	textSize = 1,
 	frame = plainFrame,
 	landscapeAlign = "left",
 	landscapeAside,
@@ -570,7 +576,7 @@ function MobileStoryReader({
 		panelChange.current?.(true);
 		return () => panelChange.current?.(false);
 	}, [settingsOpen]);
-	const rootStyle = useMemo<SceneSizeStyle>(() => ({ "--scene-size": sceneSize }), [sceneSize]);
+	const rootStyle = useMemo<ReaderSizeStyle>(() => ({ "--scene-size": sceneSize, "--text-size": textSize }), [sceneSize, textSize]);
 	// The site's controls, then Settings where the site gives a panel and fullscreen where the browser can go fullscreen, as a group of their
 	// own. iPhone Safari cannot go fullscreen, so it has no Full plate.
 	const allControls = useMemo<readonly StoryControl[]>(() => {
