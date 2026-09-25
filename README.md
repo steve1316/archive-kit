@@ -57,8 +57,8 @@ updated whenever the pinned tag moves - the same install error is how you find o
   adapter (`StageRuntime`), and the stage owns zoom and its reset button, tap-to-step with a caption, loading and error messages, and a
   frame loop that stops off screen.
 - **Hooks** for zoom and pan, an art viewer, fullscreen, the phone's media controls, and telling a phone from a desktop.
-- **Pure helpers** for name search and match spans, art layout, release-date formatting, and templated skill
-  text.
+- **Pure helpers** for name search and match spans, art layout, release-date formatting, templated skill
+  text, and the height under the navbar at every breakpoint (`fillBelowNavbar`).
 - **A theme factory** that takes an archive's palette and returns a dark MUI theme carrying the kit's type scale and component defaults.
 - **Data primitives** - a retry-safe fetch and cache layer, and a shard resolver, both taking their URLs from
   the app.
@@ -110,6 +110,11 @@ macros are type errors anywhere in `src/`. `tsconfig.base.json`, which is for ap
 so allows them.
 
 ## Changes
+
+### 0.8.0
+
+- New: `fillBelowNavbar`, a size that fills the screen under the navbar at every breakpoint. It moved in from ak-archive, so both
+  archives size their pages the same way.
 
 ### 0.7.0
 

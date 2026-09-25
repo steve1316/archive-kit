@@ -78,6 +78,7 @@ export { formatRelease } from "./lib/formatRelease.js";
 export type { Release, ReleasePrecision } from "./lib/formatRelease.js";
 export { describeTemplate } from "./lib/skillText.js";
 export type { TemplateOptions } from "./lib/skillText.js";
+export { fillBelowNavbar } from "./lib/layout.js";
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////
 // //////////////////////////////////////////////////////////////////////////////////////////////////
