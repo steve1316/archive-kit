@@ -1,7 +1,8 @@
 # archive-kit
 
 The shared front-end framework behind a family of static game-archive sites, starting with
-[Griffin Archive](https://github.com/steve1316/gfl-archive) (Girls' Frontline) and an Arknights archive.
+[Griffin Archive](https://github.com/steve1316/gfl-archive) (Girls' Frontline) and
+[Arknights Archive](https://github.com/steve1316/ak-archive) (Arknights).
 
 Every one of those sites is the same shape: a filterable index of hundreds of units, a detail page per unit,
 a zoomable art viewer, a search box in the navbar, and a dark MUI theme. This package holds the parts that do
