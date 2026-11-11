@@ -10,7 +10,7 @@ import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import { useFullscreen } from "../hooks/useFullscreen.js";
-import { isTextClick } from "../lib/events.js";
+import { readOnHandlers } from "../lib/events.js";
 import { MOBILE_LANDSCAPE_QUERY } from "../hooks/useMobileLayout.js";
 import HideNavbar from "./HideNavbar.js";
 import ReaderSheet from "./ReaderSheet.js";
@@ -642,7 +642,7 @@ function MobileStoryReader({
 			{landscapeAlign === "center" && landscapeAside ? <Box sx={ASIDE_SX}>{landscapeAside}</Box> : null}
 			<Box sx={[TEXT_COLUMN_SX, align.text]} data-region="reader-text">
 				<Transcript lines={earlier} />
-				<Box sx={BOX_SX} onClick={picking ? undefined : (event) => !isTextClick(event) && onAdvance()}>
+				<Box sx={BOX_SX} {...(picking ? {} : readOnHandlers(onAdvance))}>
 					{frame(content, picking ? "choices" : "line")}
 				</Box>
 			</Box>

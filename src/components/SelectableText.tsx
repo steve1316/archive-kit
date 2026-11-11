@@ -1,8 +1,11 @@
 import { Box } from "@mui/material";
 import type { ReactNode } from "react";
 
-/** The words can be selected, and the text cursor over them says a click there will not read on. */
-const SELECTABLE_SX = { userSelect: "text", cursor: "text" } as const;
+/**
+ * The words can be selected, and the text cursor over them says a click there will not read on. They take the pointer even inside a
+ * layer that ignores it, since a player often lays its text over the stage that way.
+ */
+const SELECTABLE_SX = { userSelect: "text", cursor: "text", pointerEvents: "auto" } as const;
 
 /** Props for SelectableText. */
 interface SelectableTextProps {
