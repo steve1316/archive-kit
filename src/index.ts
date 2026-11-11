@@ -33,6 +33,7 @@ export { default as MobileStoryReader } from "./components/MobileStoryReader.js"
 export type { MobileStoryReaderProps, StoryChoice, StoryControl, StoryCurrentLine, StoryLine } from "./components/MobileStoryReader.js";
 export { default as PageBackdrop } from "./components/PageBackdrop.js";
 export { default as RankBar } from "./components/RankBar.js";
+export { default as SelectableText } from "./components/SelectableText.js";
 export { default as ScrollToTop } from "./components/ScrollToTop.js";
 export { default as ScrollToTopOnNavigate } from "./components/ScrollToTopOnNavigate.js";
 export { default as StarRankPicker } from "./components/StarRankPicker.js";
@@ -78,6 +79,7 @@ export { formatRelease } from "./lib/formatRelease.js";
 export type { Release, ReleasePrecision } from "./lib/formatRelease.js";
 export { describeTemplate } from "./lib/skillText.js";
 export type { TemplateOptions } from "./lib/skillText.js";
+export { isTextClick } from "./lib/events.js";
 export { fillBelowNavbar } from "./lib/layout.js";
 
 // //////////////////////////////////////////////////////////////////////////////////////////////////

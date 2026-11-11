@@ -10,9 +10,11 @@ import FullscreenExitIcon from "@mui/icons-material/FullscreenExit";
 import SettingsIcon from "@mui/icons-material/Settings";
 
 import { useFullscreen } from "../hooks/useFullscreen.js";
+import { isTextClick } from "../lib/events.js";
 import { MOBILE_LANDSCAPE_QUERY } from "../hooks/useMobileLayout.js";
 import HideNavbar from "./HideNavbar.js";
 import ReaderSheet from "./ReaderSheet.js";
+import SelectableText from "./SelectableText.js";
 import StoryCorner from "./StoryCorner.js";
 import type { StoryCornerProps } from "./StoryCorner.js";
 import { END_BLACK_SX } from "./StoryEndCard.js";
@@ -344,7 +346,7 @@ export interface MobileStoryReaderProps {
 	choices?: readonly StoryChoice[] | null;
 	/** What shows at the story's end, usually an inline `StoryEndCard`, under the current line. The scene fades to black while it is set. */
 	end?: ReactNode;
-	/** Called when the reader taps the scene or the box to read on. */
+	/** Called when the reader taps the scene or the box to read on. A tap on the words themselves is left for selecting them. */
 	onAdvance: () => void;
 	/** Called first on any tap in the reader, such as to let blocked sound start. */
 	onInteract?: () => void;
@@ -609,9 +611,11 @@ function MobileStoryReader({
 		<>
 			{current ? (
 				<>
-					<Box sx={SPEAKER_SX}>{current.speaker ?? ""}</Box>
+					<Box sx={SPEAKER_SX}>
+						<SelectableText>{current.speaker ?? ""}</SelectableText>
+					</Box>
 					<Box sx={TEXT_SX} aria-live="polite" aria-busy={current.typing}>
-						{current.text}
+						<SelectableText>{current.text}</SelectableText>
 						{current.typing ? (
 							<Box component="span" sx={CARET_SX}>
 								|
@@ -638,7 +642,7 @@ function MobileStoryReader({
 			{landscapeAlign === "center" && landscapeAside ? <Box sx={ASIDE_SX}>{landscapeAside}</Box> : null}
 			<Box sx={[TEXT_COLUMN_SX, align.text]} data-region="reader-text">
 				<Transcript lines={earlier} />
-				<Box sx={BOX_SX} onClick={picking ? undefined : onAdvance}>
+				<Box sx={BOX_SX} onClick={picking ? undefined : (event) => !isTextClick(event) && onAdvance()}>
 					{frame(content, picking ? "choices" : "line")}
 				</Box>
 			</Box>
